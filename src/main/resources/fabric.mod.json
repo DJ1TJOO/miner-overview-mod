@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "miner_overview",
-  "version": "${version}",
+  "version": "0.0.1",
 
   "name": "Miner Overview Mod",
   "description": "Adds an overview of the mined items in your inventory",
@@ -20,20 +20,25 @@
   "entrypoints": {
     "client": [
       "nl.thomasbrants.mineroverview.MinerOverviewMod"
+    ],
+    "modmenu": [
+      "nl.thomasbrants.mineroverview.modmenu.ModMenuIntegration"
     ]
-
   },
   "mixins": [
     "miner_overview.mixins.json"
   ],
 
   "depends": {
-    "fabricloader": ">=0.14.14",
+    "fabricloader": ">=0.14.12",
     "fabric-api": "*",
     "minecraft": "~1.19.3",
     "java": ">=17"
   },
   "suggests": {
     "modmenu": ">=4.0.0"
+  },
+  "custom": {
+    "modmenu": {}
   }
 }

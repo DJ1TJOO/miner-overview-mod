@@ -1,4 +1,8 @@
 {
   "category.miner_overview.keybindings": "Miner Overview",
-  "key.miner_overview.hud_toggle": "Toggle Miner Hud"
+  "key.miner_overview.hud_toggle": "Toggle Overview",
+
+  "text.autoconfig.miner_overview.title": "Miner Overview Settings",
+  "text.autoconfig.miner_overview.option.hudToggle": "Overview Visible",
+  "text.autoconfig.miner_overview.option.hudToggle.@Tooltip": "Miner Overview shown ingame"
 }
