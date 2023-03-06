@@ -1,29 +1,30 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
+  "id": "miner_overview",
   "version": "${version}",
 
-  "name": "Example Mod",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "Miner Overview Mod",
+  "description": "Adds an overview of the mined items in your inventory",
   "authors": [
-    "Me!"
+    "DJ1TJOO"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "https://github.com/DJ1TJOO",
+    "sources": "https://github.com/DJ1TJOO/miner-overview-mod"
   },
 
   "license": "CC0-1.0",
-  "icon": "assets/modid/icon.png",
+  "icon": "assets/miner_overview/icon.png",
 
   "environment": "*",
   "entrypoints": {
-    "main": [
-      "net.fabricmc.example.ExampleMod"
+    "client": [
+      "nl.thomasbrants.mineroverview.MinerOverviewMod"
     ]
+
   },
   "mixins": [
-    "modid.mixins.json"
+    "miner_overview.mixins.json"
   ],
 
   "depends": {
@@ -33,6 +34,6 @@
     "java": ">=17"
   },
   "suggests": {
-    "another-mod": "*"
+    "modmenu": ">=4.0.0"
   }
 }
