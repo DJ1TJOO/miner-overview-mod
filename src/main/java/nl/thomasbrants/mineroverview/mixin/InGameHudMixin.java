@@ -13,6 +13,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * Overview hud mixin.
+ */
 @Mixin(InGameHud.class)
 public class InGameHudMixin {
 	private GameMinerHud hudMiner;
@@ -21,6 +24,9 @@ public class InGameHudMixin {
 	@Final
 	private MinecraftClient client;
 
+	/**
+	 * Mixin for overview hud.
+	 */
 	@Inject(method = "<init>", at = @At("RETURN"))
 	private void onInit(MinecraftClient client, ItemRenderer render, CallbackInfo ci) {
 		// Start Mixin
@@ -28,6 +34,9 @@ public class InGameHudMixin {
 		this.hudMiner = new GameMinerHud(client);
 	}
 
+	/**
+	 * Render overview hud.
+	 */
 	@Inject(method = "render", at = @At("HEAD"))
 	private void onDraw(MatrixStack matrixStack, float esp, CallbackInfo ci) {
 		if (!this.client.options.debugEnabled) {

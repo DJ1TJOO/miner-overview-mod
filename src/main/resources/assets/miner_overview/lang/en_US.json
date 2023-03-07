@@ -2,7 +2,43 @@
   "category.miner_overview.keybindings": "Miner Overview",
   "key.miner_overview.hud_toggle": "Toggle Overview",
 
+  "text.miner_overview.direction.north": "North",
+  "text.miner_overview.direction.east": "East",
+  "text.miner_overview.direction.south": "South",
+  "text.miner_overview.direction.west": "West",
+  "text.miner_overview.fps": "fps",
+  "text.miner_overview.nether": "Nether",
+  "text.miner_overview.overworld": "Overworld",
+  "text.miner_overview.lightLevel": "Light Level",
+
   "text.autoconfig.miner_overview.title": "Miner Overview Settings",
-  "text.autoconfig.miner_overview.option.hudToggle": "Overview Visible",
-  "text.autoconfig.miner_overview.option.hudToggle.@Tooltip": "Miner Overview shown ingame"
+  "text.autoconfig.miner_overview.option.toggleHud": "Overview Visible",
+  "text.autoconfig.miner_overview.option.toggleHud.@Tooltip": "Miner Overview shown ingame",
+
+  "text.autoconfig.miner_overview.option.textColor": "Overview Text Color",
+  "text.autoconfig.miner_overview.option.textColor.@Tooltip": "Text color of the overview ingame",
+
+  "text.autoconfig.miner_overview.option.coordinates": "Coordinates",
+  "text.autoconfig.miner_overview.option.coordinates.toggleCoordinates": "Show Coordinates",
+  "text.autoconfig.miner_overview.option.coordinates.toggleCoordinates.@Tooltip": "Shows coordinates in the overview",
+  "text.autoconfig.miner_overview.option.coordinates.toggleDirection": "Show Direction",
+  "text.autoconfig.miner_overview.option.coordinates.toggleDirection.@Tooltip": "Shows the direction in the overview. Requires show coordinates to be enabled",
+  "text.autoconfig.miner_overview.option.coordinates.toggleDimensionConversion": "Show Dimension Conversion",
+  "text.autoconfig.miner_overview.option.coordinates.toggleDimensionConversion.@Tooltip": "Shows the nether coordinates when in the overworld and the overworld coordinates when in the nether",
+
+  "text.autoconfig.miner_overview.option.toggleFps": "Show FPS",
+  "text.autoconfig.miner_overview.option.toggleFps.@Tooltip": "Shows the frames per second in the overview",
+
+  "text.autoconfig.miner_overview.option.lightLevel": "Light Level",
+  "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevel": "Show Light Level",
+  "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevel.@Tooltip": "Shows the light level in the overview",
+
+  "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevelSpawnProof": "Show Light Level Distance",
+  "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevelSpawnProof.@Tooltip": "Shows the light level distance until next light source needed in the overview. Requires show light level to be enabled",
+
+  "text.autoconfig.miner_overview.option.lightLevel.minLightLevelSpawnProof": "Minimum Light Level",
+  "text.autoconfig.miner_overview.option.lightLevel.minLightLevelSpawnProof.@Tooltip": "The minimum light level to have. Use to calculate light level distance",
+
+  "text.autoconfig.miner_overview.option.lightLevel.lightLevelHeight": "Light Level Height",
+  "text.autoconfig.miner_overview.option.lightLevel.lightLevelHeight.@Tooltip": "The offset of the light source from the players feet (1 will be at the players head). Use to calculate light level distance"
 }
