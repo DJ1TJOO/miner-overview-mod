@@ -233,7 +233,6 @@ public class GameMinerHud {
             // Find lowest value.
             if (!lightLevels.isEmpty()) {
                 lightLevels.sort(Double::compareTo);
-//                System.out.println(lightLevels);
                 actualLightLevel = lightLevels.get(0).intValue();
             } else {
                 return 0;
