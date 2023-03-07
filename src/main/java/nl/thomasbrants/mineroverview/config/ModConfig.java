@@ -16,6 +16,9 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.ColorPicker(allowAlpha = true)
     public int textColor = 0x00E0E0E0;
 
+    @ConfigEntry.Gui.Tooltip
+    public boolean toggleFps = true;
+
     @ConfigEntry.Gui.CollapsibleObject
     public Coordinates coordinates = new Coordinates();
 
@@ -29,9 +32,6 @@ public class ModConfig implements ConfigData {
         @ConfigEntry.Gui.Tooltip
         public boolean toggleDimensionConversion = false;
     }
-
-    @ConfigEntry.Gui.Tooltip
-    public boolean toggleFps = true;
 
     @ConfigEntry.Gui.CollapsibleObject
     public LightLevel lightLevel = new LightLevel();
