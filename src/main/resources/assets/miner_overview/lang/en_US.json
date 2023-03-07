@@ -34,7 +34,7 @@
   "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevel.@Tooltip": "Shows the light level in the overview",
 
   "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevelSpawnProof": "Show Light Level Distance",
-  "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevelSpawnProof.@Tooltip": "Shows the light level distance until next light source needed in the overview. Requires show light level to be enabled",
+  "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevelSpawnProof.@Tooltip": "Shows the light level distance until next light source needed in the overview. Useful during strip mining. Requires show light level to be enabled",
 
   "text.autoconfig.miner_overview.option.lightLevel.minLightLevelSpawnProof": "Minimum Light Level",
   "text.autoconfig.miner_overview.option.lightLevel.minLightLevelSpawnProof.@Tooltip": "The minimum light level to have. Use to calculate light level distance",

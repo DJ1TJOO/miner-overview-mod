@@ -3,6 +3,7 @@ package nl.thomasbrants.mineroverview.hud;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.util.math.MatrixStack;
@@ -203,29 +204,36 @@ public class GameMinerHud {
         // Find the closest light source
         List<Double> lightLevels = new ArrayList<>();
 
+        // TODO: maybe cache / only update when world changed
         int actualLightLevel = lightLevel;
         if (actualLightLevel == 0) {
             // Find all light levels
-            for (int i = -maxLightLevel; i < maxLightLevel; i++) {
-                for (int j = -maxLightLevel; j < maxLightLevel; j++) {
-                    int x = client.player.getBlockX() + i;
-                    int z = client.player.getBlockZ() + j;
+            for (int i = -maxLightLevel*3; i < maxLightLevel*3; i++) {
+                for (int j = -maxLightLevel*3; j < maxLightLevel*3; j++) {
+                    for (int k = -maxLightLevel*3; k < maxLightLevel*3; k++) {
+                        int x = client.player.getBlockX() + i;
+                        int z = client.player.getBlockZ() + j;
+                        int y = client.player.getBlockY() + k;
 
-                    BlockPos pos = new BlockPos(x, client.player.getBlockY(), z);
+                        BlockPos pos = new BlockPos(x, y, z);
 
-                    int localLightLevel = client.world.getLightLevel(LightType.BLOCK, pos);
-                    if (localLightLevel == 0) continue;
+                        BlockState block = client.world.getBlockState(pos);
+                        int blockLuminance = block.getLuminance();
+                        if (blockLuminance == 0 || getLightItemStack() == null || !block.getBlock().equals(Block.getBlockFromItem(getLightItemStack().getItem()))) continue;
 
+                        BlockPos posDistance = new BlockPos(x, client.player.getBlockY(), z);
+                        int yOffset = Math.abs(client.player.getBlockY() - y);
 
-                    double distance = pos.getSquaredDistance(client.player.getBlockPos());
-                    // TODO: not correct
-                    lightLevels.add(localLightLevel - Math.sqrt(distance));
+                        double distance = Math.sqrt(posDistance.getSquaredDistance(client.player.getPos()));
+                        lightLevels.add(blockLuminance - distance - yOffset);
+                    }
                 }
             }
 
             // Find lowest value.
             if (!lightLevels.isEmpty()) {
                 lightLevels.sort(Double::compareTo);
+//                System.out.println(lightLevels);
                 actualLightLevel = lightLevels.get(0).intValue();
             } else {
                 return 0;
