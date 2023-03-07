@@ -57,20 +57,7 @@ public class GameMinerHud {
                 config.textColor);
 
             if (entry.getKey().equals("light-level") && entry.getValue().contains(")") && client.player != null) {
-                float scale = 0.7F;
-                int xOffset = client.textRenderer.getWidth(entry.getValue()) - client.textRenderer.getWidth("   )");
-
-                MatrixStack matrixStack2 = RenderSystem.getModelViewStack();
-                matrixStack2.push();
-                matrixStack2.translate(guiX + xOffset, -3F + guiY, 0F);
-                matrixStack2.scale(scale, scale, 1.0F);
-                matrixStack2.translate(0.5F, 0F, 0F);
-                RenderSystem.applyModelViewMatrix();
-
-                client.getItemRenderer().renderInGuiWithOverrides(getLightItemStack(), 0, 0);
-
-                matrixStack2.pop();
-                RenderSystem.applyModelViewMatrix();
+                renderLightLevelItem(entry.getValue(), guiX, guiY);
             }
 
             guiY += lineHeight;
@@ -188,6 +175,23 @@ public class GameMinerHud {
         }
 
         return lightLevelText;
+    }
+
+    private void renderLightLevelItem(String lightLevelText, int x, int y) {
+        float scale = 0.7F;
+        int xOffset = client.textRenderer.getWidth(lightLevelText) - client.textRenderer.getWidth("   )");
+
+        MatrixStack matrixStack2 = RenderSystem.getModelViewStack();
+        matrixStack2.push();
+        matrixStack2.translate(x + xOffset, -3F + y, 0F);
+        matrixStack2.scale(scale, scale, 1.0F);
+        matrixStack2.translate(0.5F, 0F, 0F);
+        RenderSystem.applyModelViewMatrix();
+
+        client.getItemRenderer().renderInGuiWithOverrides(getLightItemStack(), 0, 0);
+
+        matrixStack2.pop();
+        RenderSystem.applyModelViewMatrix();
     }
 
     /**
