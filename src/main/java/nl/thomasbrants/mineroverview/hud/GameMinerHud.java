@@ -170,7 +170,7 @@ public class GameMinerHud {
             Integer nextLightSourceDistance = getNextLightSourceDistance(lightLevel, maxLightLevel);
 
             if (nextLightSourceDistance != null) {
-                lightLevelText += " (%s   )".formatted(nextLightSourceDistance);
+                lightLevelText += nextLightSourceDistance == 0 ? " (   )" : " (%s   )".formatted(nextLightSourceDistance);
             }
         }
 
