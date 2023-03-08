@@ -5,7 +5,6 @@ import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -23,6 +22,8 @@ import java.util.stream.Collectors;
 public class GameMinerHud {
     private final MinecraftClient client;
     private final ModConfig config;
+    private final Map<BlockPos, Integer> lightValueCache;
+    private final List<BlockPos> lightValueCacheRevalidation;
 
     /**
      * Init overview hud for a given minecraft client.
@@ -32,6 +33,9 @@ public class GameMinerHud {
     public GameMinerHud(MinecraftClient client) {
         this.client = client;
         this.config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
+
+        this.lightValueCache = new HashMap<>();
+        this.lightValueCacheRevalidation = new ArrayList<>();
     }
 
     /**
@@ -61,10 +65,6 @@ public class GameMinerHud {
             }
 
             guiY += lineHeight;
-        }
-
-        if (client.player != null) {
-            client.getItemRenderer().renderInGuiWithOverrides(client.player.getInventory().getMainHandStack(), guiX, guiY);
         }
 
         RenderSystem.disableBlend();
@@ -166,10 +166,10 @@ public class GameMinerHud {
         String lightLevelText = Text.translatable("text.miner_overview.lightLevel").getString() + ": %s".formatted(lightLevel);
 
         // Get next light source distance
-        if (config.lightLevel.toggleLightLevelSpawnProof) {
-            int nextLightSourceDistance = getNextLightSourceDistance(lightLevel, maxLightLevel);
+        if (config.lightLevel.toggleLightLevelSpawnProof && getLightItemStack() != null) {
+            Integer nextLightSourceDistance = getNextLightSourceDistance(lightLevel, maxLightLevel);
 
-            if (nextLightSourceDistance != 0) {
+            if (nextLightSourceDistance != null) {
                 lightLevelText += " (%s   )".formatted(nextLightSourceDistance);
             }
         }
@@ -177,6 +177,13 @@ public class GameMinerHud {
         return lightLevelText;
     }
 
+    /**
+     * Renders the light level item.
+     *
+     * @param lightLevelText The light level text to render the item in.
+     * @param x The light level text x position.
+     * @param y The light level text y position.
+     */
     private void renderLightLevelItem(String lightLevelText, int x, int y) {
         float scale = 0.7F;
         int xOffset = client.textRenderer.getWidth(lightLevelText) - client.textRenderer.getWidth("   )");
@@ -195,51 +202,65 @@ public class GameMinerHud {
     }
 
     /**
+     * Handle block update in world for light levels.
+     *
+     * @param pos The position of the updated block.
+     * @param oldBlock The old block state.
+     * @param newBlock The new block state.
+     */
+    public void handleBlockUpdate(BlockPos pos, BlockState oldBlock, BlockState newBlock) {
+        if (oldBlock.getLuminance() <= 0 && newBlock.getLuminance() <= 0) return;
+
+        if (client.world == null) return;
+
+        int maxLightLevel = client.world.getMaxLightLevel();
+
+        List<BlockPos> keys = lightValueCache.keySet().stream()
+            .filter(x -> x.isWithinDistance(pos, maxLightLevel * 3)).toList();
+
+        // Queue for update
+        for (BlockPos key : keys) {
+            if (lightValueCacheRevalidation.contains(key)) continue;
+            lightValueCacheRevalidation.add(key);
+        }
+    }
+
+    /**
      * Calculates the distance to the next light source to be placed.
      *
      * @param lightLevel The current light level.
      * @param maxLightLevel The maximum light level.
      * @return The distance to the next light source.
      */
-    private int getNextLightSourceDistance(int lightLevel, int maxLightLevel) {
+    private Integer getNextLightSourceDistance(int lightLevel, int maxLightLevel) {
         // Calculate the distance to next light source placement
         if (client.world == null || client.player == null) return 0;
 
-        // Find the closest light source
-        List<Double> lightLevels = new ArrayList<>();
-
-        // TODO: maybe cache / only update when world changed
         int actualLightLevel = lightLevel;
+
         if (actualLightLevel == 0) {
-            // Find all light levels
-            for (int i = -maxLightLevel*3; i < maxLightLevel*3; i++) {
-                for (int j = -maxLightLevel*3; j < maxLightLevel*3; j++) {
-                    for (int k = -maxLightLevel*3; k < maxLightLevel*3; k++) {
-                        int x = client.player.getBlockX() + i;
-                        int z = client.player.getBlockZ() + j;
-                        int y = client.player.getBlockY() + k;
+            BlockPos playerPos = client.player.getBlockPos();
 
-                        BlockPos pos = new BlockPos(x, y, z);
+            if (lightValueCache.containsKey(playerPos) && !lightValueCacheRevalidation.contains(playerPos)) {
+                Integer cachedLightLevel = lightValueCache.get(playerPos);
+                if (cachedLightLevel == null) return null;
 
-                        BlockState block = client.world.getBlockState(pos);
-                        int blockLuminance = block.getLuminance();
-                        if (blockLuminance == 0 || getLightItemStack() == null || !block.getBlock().equals(Block.getBlockFromItem(getLightItemStack().getItem()))) continue;
-
-                        BlockPos posDistance = new BlockPos(x, client.player.getBlockY(), z);
-                        int yOffset = Math.abs(client.player.getBlockY() - y);
-
-                        double distance = Math.sqrt(posDistance.getSquaredDistance(client.player.getPos()));
-                        lightLevels.add(blockLuminance - distance - yOffset);
-                    }
-                }
-            }
-
-            // Find lowest value.
-            if (!lightLevels.isEmpty()) {
-                lightLevels.sort(Double::compareTo);
-                actualLightLevel = lightLevels.get(0).intValue();
+                actualLightLevel = cachedLightLevel;
             } else {
-                return 0;
+                lightValueCacheRevalidation.remove(playerPos);
+
+                // Find the closest light source
+                List<Double> lightLevels = calculateLightLevels(playerPos, maxLightLevel);
+
+                // Find lowest value.
+                if (!lightLevels.isEmpty()) {
+                    lightLevels.sort(Double::compareTo);
+                    actualLightLevel = lightLevels.get(lightLevels.size() - 1).intValue();
+                    lightValueCache.put(playerPos, actualLightLevel);
+                } else {
+                    lightValueCache.put(playerPos, null);
+                    return null;
+                }
             }
         }
 
@@ -252,6 +273,59 @@ public class GameMinerHud {
         }
 
         return worldLightLevel + luminance - configLightLevel;
+    }
+
+    /**
+     * Calculates all the relative light levels for a player position.
+     *
+     * @param playerPos The player position.
+     * @param maxLightLevel The max light level of a light source.
+     * @return A list of the relative light levels.
+     */
+    private List<Double> calculateLightLevels(BlockPos playerPos, int maxLightLevel) {
+        List<Double> lightLevels = new ArrayList<>();
+
+        // Find all light levels
+        for (int i = -maxLightLevel*3; i < maxLightLevel*3; i++) {
+            for (int j = -maxLightLevel*3; j < maxLightLevel*3; j++) {
+                for (int k = -maxLightLevel*3; k < maxLightLevel*3; k++) {
+                    int x = playerPos.getX() + i;
+                    int z = playerPos.getZ() + j;
+                    int y = playerPos.getY() + k;
+
+                    BlockPos pos = new BlockPos(x, y, z);
+
+                    Double lightLevel = calculateLightLevel(playerPos, pos);
+                    if (lightLevel == null) continue;
+
+                    lightLevels.add(lightLevel);
+                }
+            }
+        }
+
+        return lightLevels;
+    }
+
+    /**
+     * Calculates the relative light level for a block at a players position.
+     *
+     * @param playerPos The players position.
+     * @param blockPos The block position.
+     * @return The relative light level.
+     */
+    private Double calculateLightLevel(BlockPos playerPos, BlockPos blockPos) {
+        if (client.world == null) return null;
+
+        BlockState block = client.world.getBlockState(blockPos);
+        int blockLuminance = block.getLuminance();
+        if (blockLuminance == 0 || getLightItemStack() == null || !block.getBlock().asItem().equals(getLightItemStack().getItem())) return null;
+
+        int yOffset = Math.abs(playerPos.getY() - blockPos.getY());
+
+        BlockPos posDistance = new BlockPos(blockPos.getX(), playerPos.getY(), blockPos.getZ());
+        double distance = Math.sqrt(posDistance.getSquaredDistance(playerPos));
+
+        return blockLuminance - distance - yOffset;
     }
 
     /**

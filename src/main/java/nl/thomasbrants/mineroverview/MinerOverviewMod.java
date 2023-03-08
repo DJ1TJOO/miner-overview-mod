@@ -8,12 +8,14 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.option.KeyBinding;
 import nl.thomasbrants.mineroverview.config.ModConfig;
+import nl.thomasbrants.mineroverview.hud.GameMinerHud;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MinerOverviewMod implements ClientModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger("miner_overview");
+	private static GameMinerHud overviewHud;
 
 	/**
 	 * Runs the mod initializer on the client environment.
@@ -42,5 +44,13 @@ public class MinerOverviewMod implements ClientModInitializer {
 				configHolder.save();
 			}
 		});
+	}
+
+	public static GameMinerHud getOverviewHud() {
+		return overviewHud;
+	}
+
+	public static void setOverviewHud(GameMinerHud overviewHud) {
+		MinerOverviewMod.overviewHud = overviewHud;
 	}
 }

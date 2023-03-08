@@ -18,8 +18,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(InGameHud.class)
 public class InGameHudMixin {
-	private GameMinerHud hudMiner;
-
 	@Shadow
 	@Final
 	private MinecraftClient client;
@@ -31,7 +29,7 @@ public class InGameHudMixin {
 	private void onInit(MinecraftClient client, ItemRenderer render, CallbackInfo ci) {
 		// Start Mixin
 		MinerOverviewMod.LOGGER.info("Init Miner Hud");
-		this.hudMiner = new GameMinerHud(client);
+		MinerOverviewMod.setOverviewHud(new GameMinerHud(client));
 	}
 
 	/**
@@ -41,7 +39,7 @@ public class InGameHudMixin {
 	private void onDraw(MatrixStack matrixStack, float esp, CallbackInfo ci) {
 		if (!this.client.options.debugEnabled) {
 			// Render hud
-			this.hudMiner.draw(matrixStack);
+			MinerOverviewMod.getOverviewHud().draw(matrixStack);
 		}
 	}
 }
