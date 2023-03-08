@@ -3,6 +3,7 @@ package nl.thomasbrants.mineroverview.config;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import nl.thomasbrants.mineroverview.helpers.Colors;
 
 /**
  * Config.
@@ -14,7 +15,7 @@ public class ModConfig implements ConfigData {
 
     @ConfigEntry.Gui.Tooltip
     @ConfigEntry.ColorPicker(allowAlpha = true)
-    public int textColor = 0x00E0E0E0;
+    public int textColor = Colors.white;
 
     @ConfigEntry.Gui.Tooltip
     public boolean toggleFps = true;

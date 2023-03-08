@@ -5,6 +5,9 @@ import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -12,6 +15,8 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.LightType;
 import nl.thomasbrants.mineroverview.config.ModConfig;
+import nl.thomasbrants.mineroverview.helpers.Colors;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,8 +25,13 @@ import java.util.stream.Collectors;
  * Overview hud.
  */
 public class GameMinerHud {
+    // TODO: fix code complexity
+    // TODO: select inventory slots to show
     private final MinecraftClient client;
     private final ModConfig config;
+    // TODO: reset on world switch
+    // TODO: fix light distance out side of light level range
+    // TODO: render green on block sides where to place
     private final Map<BlockPos, Integer> lightValueCache;
     private final List<BlockPos> lightValueCacheRevalidation;
 
@@ -67,9 +77,88 @@ public class GameMinerHud {
             guiY += lineHeight;
         }
 
-        RenderSystem.disableBlend();
+        renderItemStats(matrixStack, guiX, guiY);
 
-        client.getProfiler().pop();
+        RenderSystem.disableBlend();
+    }
+
+    private void renderItemStats(MatrixStack matrixStack, int minX, int minY) {
+        if (client.player == null) return;
+
+        Map<ItemStack, Boolean> items = new LinkedHashMap<>();
+        items.put(client.player.getInventory().getMainHandStack(), false);
+        items.put(client.player.getInventory().offHand.get(0), false);
+        for (int i = client.player.getInventory().armor.size() - 1; i >= 0; --i ) {
+            items.put(client.player.getInventory().armor.get(i), true);
+        }
+
+        items = items.entrySet().stream().filter(x -> !x.getKey().isEmpty()).collect(Collectors.toMap(
+            Map.Entry::getKey, Map.Entry::getValue, (x, y) -> y, LinkedHashMap::new));
+
+        int height = client.getWindow().getScaledHeight();
+        int lineHeight = client.textRenderer.fontHeight + 8;
+        int totalHeight = items.size() * lineHeight;
+
+        int y = Math.max(height / 2 - totalHeight / 2, minY + lineHeight);
+
+        for (Map.Entry<ItemStack, Boolean> itemStack : items.entrySet()) {
+            renderItemStat(matrixStack, itemStack.getKey(), minX, itemStack.getValue() ? y + 8 : y);
+            y += lineHeight;
+            if (itemStack.getValue()) y -= 2;
+        }
+    }
+
+    private void renderItemStat(MatrixStack matrixStack, ItemStack stack, int x, int y) {
+        if (client.player == null) return;
+
+        client.getItemRenderer().renderInGuiWithOverrides(stack, x, y);
+        renderGuiItemCount(client.textRenderer, stack, x, y, null, config.textColor);
+
+        float textX = x + 19;
+        float textY = y + (client.textRenderer.fontHeight) / 2f;
+
+        if (stack.getItem().isDamageable()) {
+            int currentDurability = stack.getMaxDamage() - stack.getDamage();
+
+            int color = config.textColor;
+            if (currentDurability < stack.getMaxDamage()) {
+                color = Colors.lightGreen;
+            }
+            if (currentDurability <= (stack.getMaxDamage() / 1.5)) {
+                color = Colors.lightYellow;
+            }
+            if (currentDurability <= (stack.getMaxDamage() / 2.5)) {
+                color = Colors.lightOrange;
+            }
+            if (currentDurability <= (stack.getMaxDamage()) / 4) {
+                color = Colors.lightRed;
+            }
+
+            renderGuiOverlay(client.textRenderer, x + 19, y + 6, "%s".formatted(currentDurability), color);
+            return;
+        }
+
+        int itemCount = client.player.getInventory().count(stack.getItem());
+        if (itemCount > stack.getCount()) {
+            String itemCountString = "(%s)".formatted(itemCount);
+            renderGuiOverlay(client.textRenderer, x + 19, y + 6 + 3, itemCountString, config.textColor);
+        }
+    }
+
+    private void renderGuiItemCount(TextRenderer renderer, ItemStack stack, int x, int y, @Nullable String countLabel, int color) {
+        if (stack.isEmpty()) return;
+        if (stack.getCount() == 1 && countLabel == null) return;
+
+        String string = countLabel == null ? String.valueOf(stack.getCount()) : countLabel;
+        renderGuiOverlay(renderer, x + 19 - 2 - renderer.getWidth(string), y + 6 + 3, string, color);
+    }
+
+    private void renderGuiOverlay(TextRenderer renderer, int x, int y, String label, int color) {
+        MatrixStack matrixStack = new MatrixStack();
+        matrixStack.translate(0.0F, 0.0F, client.getItemRenderer().zOffset + 200.0F);
+        VertexConsumerProvider.Immediate immediate = VertexConsumerProvider.immediate(Tessellator.getInstance().getBuffer());
+        renderer.draw(label, (float)(x), (float)(y), color, true, matrixStack.peek().getPositionMatrix(), immediate, false, 0, 15728880);
+        immediate.draw();
     }
 
     /**
@@ -336,7 +425,7 @@ public class GameMinerHud {
     private int getLuminance() {
         if (client.player == null) return 0;
 
-        if (client.player.getInventory().getMainHandStack() != null) {
+        if (!client.player.getInventory().getMainHandStack().isEmpty()) {
             Item lightSource = client.player.getInventory().getMainHandStack().getItem();
             int luminance = Block.getBlockFromItem(lightSource).getStateManager().getDefaultState().getLuminance();
 
@@ -345,7 +434,7 @@ public class GameMinerHud {
             }
         }
 
-        if (client.player.getInventory().offHand.get(0).getItem() != null) {
+        if (!client.player.getInventory().offHand.get(0).isEmpty()) {
             Item lightSource = client.player.getInventory().offHand.get(0).getItem();
             int luminance = Block.getBlockFromItem(lightSource).getStateManager().getDefaultState().getLuminance();
 
@@ -365,7 +454,7 @@ public class GameMinerHud {
     private ItemStack getLightItemStack() {
         if (client.player == null) return null;
 
-        if (client.player.getInventory().getMainHandStack() != null) {
+        if (!client.player.getInventory().getMainHandStack().isEmpty()) {
             Item lightSource = client.player.getInventory().getMainHandStack().getItem();
             int luminance = Block.getBlockFromItem(lightSource).getStateManager().getDefaultState().getLuminance();
 
@@ -374,7 +463,7 @@ public class GameMinerHud {
             }
         }
 
-        if (client.player.getInventory().offHand.get(0).getItem() != null) {
+        if (!client.player.getInventory().offHand.get(0).isEmpty()) {
             Item lightSource = client.player.getInventory().offHand.get(0).getItem();
             int luminance = Block.getBlockFromItem(lightSource).getStateManager().getDefaultState().getLuminance();
 
