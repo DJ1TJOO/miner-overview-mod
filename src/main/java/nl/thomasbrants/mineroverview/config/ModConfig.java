@@ -77,6 +77,12 @@ public class ModConfig implements ConfigData {
 
         @ConfigEntry.Gui.Tooltip
         public boolean toggleInventoryItemOverviewSlots = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean toggleItemDamage = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean toggleTotalItemCount = true;
     }
 
     @ConfigEntry.Gui.Excluded

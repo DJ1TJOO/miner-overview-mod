@@ -149,7 +149,7 @@ public class GameMinerHud {
         client.getItemRenderer().renderInGuiWithOverrides(stack, x, y);
         renderGuiItemCount(client.textRenderer, stack, x, y, config.textColor);
 
-        if (stack.getItem().isDamageable()) {
+        if (stack.getItem().isDamageable() && config.itemOverview.toggleItemDamage) {
             int currentDurability = stack.getMaxDamage() - stack.getDamage();
 
             int color = config.textColor;
@@ -171,7 +171,7 @@ public class GameMinerHud {
         }
 
         int itemCount = client.player.getInventory().count(stack.getItem());
-        if (itemCount > stack.getCount()) {
+        if (itemCount > stack.getCount() && config.itemOverview.toggleTotalItemCount) {
             String itemCountString = "(%s)".formatted(itemCount);
             renderGuiOverlay(client.textRenderer, x + 19, y + 6 + 3, itemCountString, config.textColor);
         }

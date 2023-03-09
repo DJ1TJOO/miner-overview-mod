@@ -53,5 +53,9 @@
   "text.autoconfig.miner_overview.option.itemOverview.toggleInventoryItemOverview": "Show Inventory",
   "text.autoconfig.miner_overview.option.itemOverview.toggleInventoryItemOverview.@Tooltip": "Shows the selected inventory items in the item overview. Use toggle slot keybinding + mouse click to select a slot",
   "text.autoconfig.miner_overview.option.itemOverview.toggleInventoryItemOverviewSlots": "Show Inventory Selected Slots",
-  "text.autoconfig.miner_overview.option.itemOverview.toggleInventoryItemOverviewSlots.@Tooltip": "Changes the background of a selected slot in the inventory"
+  "text.autoconfig.miner_overview.option.itemOverview.toggleInventoryItemOverviewSlots.@Tooltip": "Changes the background of a selected slot in the inventory",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleItemDamage": "Show Item Damage",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleItemDamage.@Tooltip": "Shows the damage of an item next to it",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleTotalItemCount": "Show Total Item Count",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleTotalItemCount.@Tooltip": "Shows the total item count next to it. The total count is from the whole inventory."
 }
