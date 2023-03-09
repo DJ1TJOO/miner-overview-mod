@@ -88,31 +88,8 @@ public class GameMinerHud {
     private void renderItemStats(int minX, int minY) {
         if (client.player == null || !config.itemOverview.toggleItemOverview) return;
 
-        List<ItemStack> items = new ArrayList<>();
-        if (config.itemOverview.toggleMainHandItemOverview) {
-            items.add(client.player.getInventory().getMainHandStack());
-        }
-        if (config.itemOverview.toggleOffHandItemOverview) {
-            items.add(client.player.getInventory().offHand.get(0));
-        }
-
-        if (config.itemOverview.toggleArmorItemOverview) {
-            items.add(null);
-
-            for (int i = client.player.getInventory().armor.size() - 1; i >= 0; --i ) {
-                items.add(client.player.getInventory().armor.get(i));
-            }
-        }
-
-        if (config.itemOverview.toggleInventoryItemOverview) {
-            items.add(null);
-
-            for (int slot : config.renderedSlots) {
-                items.add(client.player.getInventory().getStack(slot));
-            }
-        }
-
-        items = items.stream().filter(x -> x == null || !x.isEmpty()).toList();
+        List<ItemStack> items = getItemOverviewStacks();
+        if (items == null) return;
 
         int height = client.getWindow().getScaledHeight();
         int lineHeight = client.textRenderer.fontHeight + 8;
@@ -138,9 +115,40 @@ public class GameMinerHud {
             if (client.player.getInventory().armor.contains(itemStack)) y -= 2;
         }
 
-        if (originalSize > items.size()) {
+        if (originalSize <= items.size()) {
             renderGuiOverlay(client.textRenderer, minX, y + 8, "(%s %s)".formatted(originalSize - items.size(), Text.translatable("text.miner_overview.more").getString()), config.textColor);
         }
+    }
+
+    private List<ItemStack> getItemOverviewStacks() {
+        if (client.player == null) return null;
+
+        List<ItemStack> items = new ArrayList<>();
+        if (config.itemOverview.toggleMainHandItemOverview) {
+            items.add(client.player.getInventory().getMainHandStack());
+        }
+        if (config.itemOverview.toggleOffHandItemOverview) {
+            items.add(client.player.getInventory().offHand.get(0));
+        }
+
+        if (config.itemOverview.toggleArmorItemOverview) {
+            items.add(null);
+
+            for (int i = client.player.getInventory().armor.size() - 1; i >= 0; --i ) {
+                items.add(client.player.getInventory().armor.get(i));
+            }
+        }
+
+        if (config.itemOverview.toggleInventoryItemOverview) {
+            items.add(null);
+
+            for (int slot : config.renderedSlots) {
+                items.add(client.player.getInventory().getStack(slot));
+            }
+        }
+
+        items = items.stream().filter(x -> x == null || !x.isEmpty()).toList();
+        return items;
     }
 
     private void renderItemStat(ItemStack stack, int x, int y) {
@@ -230,8 +238,7 @@ public class GameMinerHud {
      * @return The text, null if not visible.
      */
     private String getDimensionConversionText() {
-        if (client.player == null) return null;
-        if (!config.coordinates.toggleDimensionConversion) return null;
+        if (client.player == null || !config.coordinates.toggleDimensionConversion) return null;
 
         String coordsFormat = "%s, %s, %s";
 
@@ -355,7 +362,7 @@ public class GameMinerHud {
      */
     private Integer getNextLightSourceDistance(int lightLevel, int maxLightLevel) {
         // Calculate the distance to next light source placement
-        if (client.world == null || client.player == null) return 0;
+        if (client.world == null || client.player == null) return null;
 
         int actualLightLevel = lightLevel;
 
@@ -390,7 +397,7 @@ public class GameMinerHud {
         int worldLightLevel = actualLightLevel - 2;
 
         if (luminance <= 0) {
-            return 0;
+            return null;
         }
 
         return worldLightLevel + luminance - configLightLevel;
@@ -508,21 +515,7 @@ public class GameMinerHud {
     }
 
     public static void handleSlotMouseClick(Slot slot, int slotId, CallbackInfo ci) {
-        if (!config.toggleHud || !config.itemOverview.toggleItemOverview || !config.itemOverview.toggleInventoryItemOverview) return;
-        if (MinerOverviewMod.getOverviewHud() == null) return;
-        if (!MinerOverviewMod.isToggleSlotPressed()) return;
-
-        // Only allow for inventory slots
-        if (slot.getIndex() < 9 || slot.getIndex() > 35) return;
-
-        // Only allow if last slot with index
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
-        if (player == null) return;
-
-        List<Slot> slots = player.currentScreenHandler.slots.stream()
-            .filter(x -> x.getIndex() == slot.getIndex()).toList();
-        Slot lastSlot = slots.get(slots.size() - 1);
-        if (lastSlot.id != slotId) return;
+        if (!validItemOverviewSlot(slot, slotId)) return;
 
         if (config.renderedSlots.contains(slot.getIndex())) {
             config.renderedSlots.remove(slot.getIndex());
@@ -532,5 +525,28 @@ public class GameMinerHud {
 
         configHolder.save();
         ci.cancel();
+    }
+
+    private static boolean validItemOverviewSlot(Slot slot, int slotId) {
+        if (!config.toggleHud || !config.itemOverview.toggleItemOverview || !config.itemOverview.toggleInventoryItemOverview) {
+            return false;
+        }
+
+        if (MinerOverviewMod.getOverviewHud() == null || !MinerOverviewMod.isToggleSlotPressed()) return false;
+
+        // Only allow for inventory slots
+        if (slot.getIndex() < 9 || slot.getIndex() > 35) return false;
+
+        // Only allow if last slot with index
+        return slot == getItemOverviewSlot(slot.getIndex());
+    }
+
+    public static Slot getItemOverviewSlot(int index) {
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        if (player == null) return null;
+
+        List<Slot> slots = player.currentScreenHandler.slots.stream()
+            .filter(x -> x.getIndex() == index).toList();
+        return slots.get(slots.size() - 1);
     }
 }

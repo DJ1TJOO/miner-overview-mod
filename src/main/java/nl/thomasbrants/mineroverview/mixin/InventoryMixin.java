@@ -17,12 +17,9 @@ import nl.thomasbrants.mineroverview.MinerOverviewMod;
 import nl.thomasbrants.mineroverview.config.ModConfig;
 import nl.thomasbrants.mineroverview.hud.GameMinerHud;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.List;
 
 /**
  * Inventory selected mixin.
@@ -34,29 +31,31 @@ public abstract class InventoryMixin extends DrawableHelper {
     private final ConfigHolder<ModConfig> configHolder = AutoConfig.getConfigHolder(ModConfig.class);
     private final ModConfig config = configHolder.getConfig();
 
-    @Shadow
-    protected int x, y;
-
     @Inject(method = "drawSlot", at = @At(value = "FIELD", target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;itemRenderer:Lnet/minecraft/client/render/item/ItemRenderer;", ordinal = 0))
     private void drawSlot(MatrixStack matrices, Slot slot, CallbackInfo ci) {
-        if (!config.toggleHud || !config.itemOverview.toggleItemOverview || !config.itemOverview.toggleInventoryItemOverview || !config.itemOverview.toggleInventoryItemOverviewSlots) return;
-        if (MinerOverviewMod.getOverviewHud() == null) return;
-
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
-        if (player == null) return;
-        if (player.currentScreenHandler instanceof CreativeInventoryScreen.CreativeScreenHandler) {
-            if (!MinerOverviewMod.getCreateInventoryTab().getType().equals(ItemGroup.Type.INVENTORY)) return;
-        }
+        if (!shouldDrawSlot()) return;
 
         RenderSystem.setShaderTexture(0, OVERLAY_SLOT_TEXTURE);
 
-        List<Slot> slots = player.currentScreenHandler.slots.stream()
-            .filter(x -> x.getIndex() == slot.getIndex()).toList();
-        Slot lastSlot = slots.get(slots.size() - 1);
-
-        if (lastSlot != null && slot == lastSlot && config.renderedSlots.contains(slot.getIndex())) {
+        Slot lastSlot = GameMinerHud.getItemOverviewSlot(slot.getIndex());
+        if (slot == lastSlot && config.renderedSlots.contains(slot.getIndex())) {
             DrawableHelper.drawTexture(matrices, slot.x, slot.y, getZOffset(), 0, 0, 16, 16, 16, 16);
         }
+    }
+
+    private boolean shouldDrawSlot() {
+        if (!config.toggleHud || !config.itemOverview.toggleItemOverview || !config.itemOverview.toggleInventoryItemOverview || !config.itemOverview.toggleInventoryItemOverviewSlots)
+            return false;
+        if (MinerOverviewMod.getOverviewHud() == null) return false;
+
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        if (player == null) return false;
+        if (player.currentScreenHandler instanceof CreativeInventoryScreen.CreativeScreenHandler) {
+            return MinerOverviewMod.getCreateInventoryTab().getType()
+                .equals(ItemGroup.Type.INVENTORY);
+        }
+
+        return true;
     }
 
     @Inject(method = "onMouseClick*", at = @At("HEAD"), cancellable = true)
