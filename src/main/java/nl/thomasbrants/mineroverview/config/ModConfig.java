@@ -5,6 +5,9 @@ import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import nl.thomasbrants.mineroverview.helpers.Colors;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Config.
  */
@@ -53,4 +56,29 @@ public class ModConfig implements ConfigData {
         public int lightLevelHeight = 1;
     }
 
+    @ConfigEntry.Gui.CollapsibleObject
+    public ItemOverview itemOverview = new ItemOverview();
+
+    public static class ItemOverview {
+        @ConfigEntry.Gui.Tooltip
+        public boolean toggleItemOverview = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean toggleMainHandItemOverview = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean toggleOffHandItemOverview = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean toggleArmorItemOverview = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean toggleInventoryItemOverview = true;
+
+        @ConfigEntry.Gui.Tooltip
+        public boolean toggleInventoryItemOverviewSlots = true;
+    }
+
+    @ConfigEntry.Gui.Excluded
+    public Set<Integer> renderedSlots = new HashSet<>();
 }

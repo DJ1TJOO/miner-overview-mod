@@ -6,7 +6,10 @@
   "mixins": [
   ],
   "client": [
+    "CreativeInventoryMixin",
     "InGameHudMixin",
+    "InventoryMixin",
+    "KeyboardMixin",
     "WorldMixin"
   ],
   "injectors": {

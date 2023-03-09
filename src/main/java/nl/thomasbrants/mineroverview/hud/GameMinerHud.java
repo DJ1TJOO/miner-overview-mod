@@ -2,21 +2,25 @@ package nl.thomasbrants.mineroverview.hud;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.ConfigHolder;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.LightType;
+import nl.thomasbrants.mineroverview.MinerOverviewMod;
 import nl.thomasbrants.mineroverview.config.ModConfig;
 import nl.thomasbrants.mineroverview.helpers.Colors;
-import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,10 +29,10 @@ import java.util.stream.Collectors;
  * Overview hud.
  */
 public class GameMinerHud {
+    private static final ConfigHolder<ModConfig> configHolder = AutoConfig.getConfigHolder(ModConfig.class);
+    private static final ModConfig config = configHolder.getConfig();
     // TODO: fix code complexity
-    // TODO: select inventory slots to show
     private final MinecraftClient client;
-    private final ModConfig config;
     // TODO: reset on world switch
     // TODO: fix light distance out side of light level range
     // TODO: render green on block sides where to place
@@ -42,7 +46,6 @@ public class GameMinerHud {
      */
     public GameMinerHud(MinecraftClient client) {
         this.client = client;
-        this.config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
 
         this.lightValueCache = new HashMap<>();
         this.lightValueCacheRevalidation = new ArrayList<>();
@@ -77,45 +80,74 @@ public class GameMinerHud {
             guiY += lineHeight;
         }
 
-        renderItemStats(matrixStack, guiX, guiY);
+        renderItemStats(guiX, guiY);
 
         RenderSystem.disableBlend();
     }
 
-    private void renderItemStats(MatrixStack matrixStack, int minX, int minY) {
-        if (client.player == null) return;
+    private void renderItemStats(int minX, int minY) {
+        if (client.player == null || !config.itemOverview.toggleItemOverview) return;
 
-        Map<ItemStack, Boolean> items = new LinkedHashMap<>();
-        items.put(client.player.getInventory().getMainHandStack(), false);
-        items.put(client.player.getInventory().offHand.get(0), false);
-        for (int i = client.player.getInventory().armor.size() - 1; i >= 0; --i ) {
-            items.put(client.player.getInventory().armor.get(i), true);
+        List<ItemStack> items = new ArrayList<>();
+        if (config.itemOverview.toggleMainHandItemOverview) {
+            items.add(client.player.getInventory().getMainHandStack());
+        }
+        if (config.itemOverview.toggleOffHandItemOverview) {
+            items.add(client.player.getInventory().offHand.get(0));
         }
 
-        items = items.entrySet().stream().filter(x -> !x.getKey().isEmpty()).collect(Collectors.toMap(
-            Map.Entry::getKey, Map.Entry::getValue, (x, y) -> y, LinkedHashMap::new));
+        if (config.itemOverview.toggleArmorItemOverview) {
+            items.add(null);
+
+            for (int i = client.player.getInventory().armor.size() - 1; i >= 0; --i ) {
+                items.add(client.player.getInventory().armor.get(i));
+            }
+        }
+
+        if (config.itemOverview.toggleInventoryItemOverview) {
+            items.add(null);
+
+            for (int slot : config.renderedSlots) {
+                items.add(client.player.getInventory().getStack(slot));
+            }
+        }
+
+        items = items.stream().filter(x -> x == null || !x.isEmpty()).toList();
 
         int height = client.getWindow().getScaledHeight();
         int lineHeight = client.textRenderer.fontHeight + 8;
-        int totalHeight = items.size() * lineHeight;
 
+        int maxSpace = height - minY - lineHeight * 2;
+        int itemsSpace = maxSpace / lineHeight;
+
+        int originalSize = items.size();
+        items = items.stream().limit(itemsSpace).toList();
+
+        int totalHeight = items.size() * lineHeight;
         int y = Math.max(height / 2 - totalHeight / 2, minY + lineHeight);
 
-        for (Map.Entry<ItemStack, Boolean> itemStack : items.entrySet()) {
-            renderItemStat(matrixStack, itemStack.getKey(), minX, itemStack.getValue() ? y + 8 : y);
+        for (ItemStack itemStack : items) {
+            if (itemStack == null) {
+                y += 8;
+                continue;
+            }
+
+            renderItemStat(itemStack, minX, y);
             y += lineHeight;
-            if (itemStack.getValue()) y -= 2;
+
+            if (client.player.getInventory().armor.contains(itemStack)) y -= 2;
+        }
+
+        if (originalSize > items.size()) {
+            renderGuiOverlay(client.textRenderer, minX, y + 8, "(%s %s)".formatted(originalSize - items.size(), Text.translatable("text.miner_overview.more").getString()), config.textColor);
         }
     }
 
-    private void renderItemStat(MatrixStack matrixStack, ItemStack stack, int x, int y) {
+    private void renderItemStat(ItemStack stack, int x, int y) {
         if (client.player == null) return;
 
         client.getItemRenderer().renderInGuiWithOverrides(stack, x, y);
-        renderGuiItemCount(client.textRenderer, stack, x, y, null, config.textColor);
-
-        float textX = x + 19;
-        float textY = y + (client.textRenderer.fontHeight) / 2f;
+        renderGuiItemCount(client.textRenderer, stack, x, y, config.textColor);
 
         if (stack.getItem().isDamageable()) {
             int currentDurability = stack.getMaxDamage() - stack.getDamage();
@@ -145,11 +177,11 @@ public class GameMinerHud {
         }
     }
 
-    private void renderGuiItemCount(TextRenderer renderer, ItemStack stack, int x, int y, @Nullable String countLabel, int color) {
+    private void renderGuiItemCount(TextRenderer renderer, ItemStack stack, int x, int y, int color) {
         if (stack.isEmpty()) return;
-        if (stack.getCount() == 1 && countLabel == null) return;
+        if (stack.getCount() == 1) return;
 
-        String string = countLabel == null ? String.valueOf(stack.getCount()) : countLabel;
+        String string = String.valueOf(stack.getCount());
         renderGuiOverlay(renderer, x + 19 - 2 - renderer.getWidth(string), y + 6 + 3, string, color);
     }
 
@@ -473,5 +505,32 @@ public class GameMinerHud {
         }
 
         return null;
+    }
+
+    public static void handleSlotMouseClick(Slot slot, int slotId, CallbackInfo ci) {
+        if (!config.toggleHud || !config.itemOverview.toggleItemOverview || !config.itemOverview.toggleInventoryItemOverview) return;
+        if (MinerOverviewMod.getOverviewHud() == null) return;
+        if (!MinerOverviewMod.isToggleSlotPressed()) return;
+
+        // Only allow for inventory slots
+        if (slot.getIndex() < 9 || slot.getIndex() > 35) return;
+
+        // Only allow if last slot with index
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        if (player == null) return;
+
+        List<Slot> slots = player.currentScreenHandler.slots.stream()
+            .filter(x -> x.getIndex() == slot.getIndex()).toList();
+        Slot lastSlot = slots.get(slots.size() - 1);
+        if (lastSlot.id != slotId) return;
+
+        if (config.renderedSlots.contains(slot.getIndex())) {
+            config.renderedSlots.remove(slot.getIndex());
+        } else {
+            config.renderedSlots.add(slot.getIndex());
+        }
+
+        configHolder.save();
+        ci.cancel();
     }
 }

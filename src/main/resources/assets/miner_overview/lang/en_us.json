@@ -1,6 +1,7 @@
 {
   "category.miner_overview.keybindings": "Miner Overview",
   "key.miner_overview.hud_toggle": "Toggle Overview",
+  "key.miner_overview.toggle_slot": "Toggle Slot For Item Overview",
 
   "text.miner_overview.direction.north": "North",
   "text.miner_overview.direction.east": "East",
@@ -10,6 +11,7 @@
   "text.miner_overview.nether": "Nether",
   "text.miner_overview.overworld": "Overworld",
   "text.miner_overview.lightLevel": "Light Level",
+  "text.miner_overview.more": "more",
 
   "text.autoconfig.miner_overview.title": "Miner Overview Settings",
   "text.autoconfig.miner_overview.option.toggleHud": "Overview Visible",
@@ -32,13 +34,24 @@
   "text.autoconfig.miner_overview.option.lightLevel": "Light Level",
   "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevel": "Show Light Level",
   "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevel.@Tooltip": "Shows the light level in the overview",
-
   "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevelSpawnProof": "Show Light Level Distance",
   "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevelSpawnProof.@Tooltip": "Shows the light level distance until next light source needed in the overview. Useful during strip mining. Requires show light level to be enabled",
-
   "text.autoconfig.miner_overview.option.lightLevel.minLightLevelSpawnProof": "Minimum Light Level",
   "text.autoconfig.miner_overview.option.lightLevel.minLightLevelSpawnProof.@Tooltip": "The minimum light level to have. Use to calculate light level distance",
-
   "text.autoconfig.miner_overview.option.lightLevel.lightLevelHeight": "Light Level Height",
-  "text.autoconfig.miner_overview.option.lightLevel.lightLevelHeight.@Tooltip": "The offset of the light source from the players feet (1 will be at the players head). Use to calculate light level distance"
+  "text.autoconfig.miner_overview.option.lightLevel.lightLevelHeight.@Tooltip": "The offset of the light source from the players feet (1 will be at the players head). Use to calculate light level distance",
+
+  "text.autoconfig.miner_overview.option.itemOverview": "Item Overview",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleItemOverview": "Show Item Overview",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleItemOverview.@Tooltip": "Shows the item overview on the side",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleMainHandItemOverview": "Show Main Hand",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleMainHandItemOverview.@Tooltip": "Shows the main hand item in the item overview",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleOffHandItemOverview": "Show Off Hand",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleOffHandItemOverview.@Tooltip": "Shows the off hand item in the item overview",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleArmorItemOverview": "Show Armor",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleArmorItemOverview.@Tooltip": "Shows the armor items in the item overview",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleInventoryItemOverview": "Show Inventory",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleInventoryItemOverview.@Tooltip": "Shows the selected inventory items in the item overview. Use toggle slot keybinding + mouse click to select a slot",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleInventoryItemOverviewSlots": "Show Inventory Selected Slots",
+  "text.autoconfig.miner_overview.option.itemOverview.toggleInventoryItemOverviewSlots.@Tooltip": "Changes the background of a selected slot in the inventory"
 }
