@@ -1,36 +1,40 @@
 package nl.thomasbrants.mineroverview.mixin;
 
 import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
+import net.minecraft.world.dimension.DimensionType;
+import nl.thomasbrants.mineroverview.MinerOverviewMod;
 import nl.thomasbrants.mineroverview.light.LightLevelStorage;
 import nl.thomasbrants.mineroverview.light.LightLevelStorageEntry;
 import nl.thomasbrants.mineroverview.light.QueueEntry;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayDeque;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Mixin(World.class)
-public abstract class LightMixin implements WorldAccess {
+public abstract class LightMixin implements WorldAccess, BlockView {
+    @Shadow @Final private RegistryKey<DimensionType> dimension;
     // TODO: find new unknown sources on player move.
-    // TODO: recalculate on block place/break
     // TODO: make data struct more efficient.
-    // TODO: reset on world change
     private final ArrayDeque<QueueEntry> queue = new ArrayDeque<>();
 
     @Inject(method = "onBlockChanged", at = @At("RETURN"))
     public void onBlockChanged(BlockPos pos, BlockState oldBlock, BlockState newBlock,
                                CallbackInfo ci) {
-        assert MinecraftClient.getInstance().world != null;
-        updateBlockLight(pos.asLong(), MinecraftClient.getInstance().world.getLuminance(pos));
+        if (!this.dimension.getValue().getPath().contains("overworld")) return;
+        updateBlockLight(pos.asLong(), getLuminance(pos));
     }
 
     private int getLocalLightLevel(long pos) {
@@ -42,46 +46,48 @@ public abstract class LightMixin implements WorldAccess {
     }
 
     private void updateBlockLight(long pos, int value) {
+        MinerOverviewMod.LOGGER.info("Recalculating negative light values");
         long start = System.currentTimeMillis();
 
         if (value < 0 || value > getMaxLightLevel()) {
             throw new IllegalArgumentException();
         }
 
-        int existingLevel = getLocalLightLevel(pos);
+        // Reset all with sources in range
+        Map<Long, LightLevelStorageEntry> sources = new LinkedHashMap<>();
+        for (Map.Entry<Long, LightLevelStorageEntry> lightLevel : LightLevelStorage.LIGHT_LEVELS.entrySet()
+            .stream().sorted((a, b) -> b.getValue().value - a.getValue().value).toList()) {
+            long lightLevelPos = lightLevel.getKey();
+            long sourcePos = lightLevel.getValue().sourcePos;
 
-        boolean needPropagate = false;
-        if (value <= existingLevel) {
-            for (long childPos : LightLevelStorage.LIGHT_LEVELS.entrySet().stream().filter(x -> x.getValue().sourcePos == pos).map(
-                Map.Entry::getKey).toList()
-            ) {
-                LightLevelStorage.LIGHT_LEVELS.remove(childPos);
+            if (lightLevelPos == sourcePos && BlockPos.fromLong(lightLevelPos).isWithinDistance(BlockPos.fromLong(pos), getMaxLightLevel()*2)) {
+                sources.put(lightLevelPos, lightLevel.getValue());
+                continue;
             }
 
-            Map<Long, LightLevelStorageEntry> sources = LightLevelStorage.LIGHT_LEVELS.entrySet().stream().filter(x -> x.getValue().sourcePos == x.getKey() && BlockPos.fromLong(x.getKey()).isWithinDistance(BlockPos.fromLong(pos), getMaxLightLevel()*2)).collect(
-                Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-            if (sources.size() > 0) needPropagate = true;
-
-            for (Map.Entry<Long, LightLevelStorageEntry> entry : sources.entrySet()) {
-                queue.add(new QueueEntry(entry.getKey(), entry.getValue()));
+            if (sources.containsKey(sourcePos) && lightLevelPos != sourcePos) {
+                LightLevelStorage.LIGHT_LEVELS.remove(lightLevelPos);
             }
+        }
+
+        LightLevelStorage.LIGHT_LEVELS.remove(pos);
+
+        // Requeue all sources except for changed
+        for (Map.Entry<Long, LightLevelStorageEntry> entry : sources.entrySet()) {
+            if (entry.getKey() == pos) continue;
+            queue.add(new QueueEntry(entry.getKey(), entry.getValue()));
         }
 
         if (value > 0) {
             queue.add(new QueueEntry(pos, new LightLevelStorageEntry(value, pos)));
             setLocalLightLevel(pos, value, pos);
-
-            needPropagate = true;
         }
 
-        if (needPropagate) {
-            this.propagateIncrease();
-        }
+        this.propagateIncrease();
 
         long end = System.currentTimeMillis();
         long time = end - start;
-        System.out.println("It took: " + time + "ms");
+        MinerOverviewMod.LOGGER.info("Recalculated negative light values. It took: " + time + "ms");
     }
 
     private void propagateIncrease() {

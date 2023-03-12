@@ -14,35 +14,40 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.RotationAxis;
 import net.minecraft.world.LightType;
-import nl.thomasbrants.mineroverview.MinerOverviewMod;
 import nl.thomasbrants.mineroverview.config.ModConfig;
 import nl.thomasbrants.mineroverview.helpers.Colors;
 import nl.thomasbrants.mineroverview.light.LightHighlightRenderer;
 import nl.thomasbrants.mineroverview.light.LightLevelStorage;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Overview hud.
  */
-public class GameMinerHud {
-    private static final ConfigHolder<ModConfig> configHolder = AutoConfig.getConfigHolder(ModConfig.class);
-    private static final ModConfig config = configHolder.getConfig();
+public class OverviewHud {
     // TODO: fix code complexity
+
+    private static final OverviewHud INSTANCE = new OverviewHud(MinecraftClient.getInstance());
+    public static OverviewHud getInstance() {
+        return INSTANCE;
+    }
+
+    private final ConfigHolder<ModConfig> configHolder = AutoConfig.getConfigHolder(ModConfig.class);
+    private final ModConfig config = configHolder.getConfig();
     private final MinecraftClient client;
-    // TODO: reset on world switch
-    // TODO: render green on block sides where to place
 
     /**
      * Init overview hud for a given minecraft client.
      *
      * @param client The minecraft client.
      */
-    public GameMinerHud(MinecraftClient client) {
+    public OverviewHud(MinecraftClient client) {
         this.client = client;
     }
 
@@ -447,7 +452,7 @@ public class GameMinerHud {
             return false;
         }
 
-        if (MinerOverviewMod.getOverviewHud() == null || !MinerOverviewMod.isToggleSlotPressed()) return false;
+        if (!HudStates.getInstance().isToggleSlotPressed()) return false;
 
         // Only allow for inventory slots
         if (slot.getIndex() < 9 || slot.getIndex() > 35) return false;

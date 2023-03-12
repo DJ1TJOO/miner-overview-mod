@@ -7,9 +7,9 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
-import nl.thomasbrants.mineroverview.MinerOverviewMod;
 import nl.thomasbrants.mineroverview.config.ModConfig;
-import nl.thomasbrants.mineroverview.hud.GameMinerHud;
+import nl.thomasbrants.mineroverview.hud.OverviewHud;
+import nl.thomasbrants.mineroverview.hud.HudStates;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,13 +27,12 @@ public class CreativeInventoryMixin {
     @Inject(method = "render", at = @At("HEAD"))
     public void render(MatrixStack matrices, int mouseX, int mouseY, float delta,
                              CallbackInfo ci) {
-        MinerOverviewMod.setCreateInventoryTab(selectedTab);
+        HudStates.getInstance().setCreateInventoryTab(selectedTab);
     }
 
     @Inject(method = "onMouseClick", at = @At("HEAD"), cancellable = true)
     public void onMouseClick(Slot slot, int slotId, int button, SlotActionType actionType,
                              CallbackInfo ci) {
-        if (MinerOverviewMod.getOverviewHud() == null) return;
-        MinerOverviewMod.getOverviewHud().handleSlotMouseClick(slot, ci);
+        OverviewHud.getInstance().handleSlotMouseClick(slot, ci);
     }
 }

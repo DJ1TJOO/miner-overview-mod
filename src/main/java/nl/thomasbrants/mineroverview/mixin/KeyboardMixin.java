@@ -2,7 +2,7 @@ package nl.thomasbrants.mineroverview.mixin;
 
 import net.minecraft.client.Keyboard;
 import net.minecraft.client.MinecraftClient;
-import nl.thomasbrants.mineroverview.MinerOverviewMod;
+import nl.thomasbrants.mineroverview.hud.HudStates;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -22,6 +22,6 @@ public class KeyboardMixin {
                                         ordinal = 0))
     public void onKey(long window, int key, int scancode, int action, int modifiers,
                       CallbackInfo ci) {
-           MinerOverviewMod.handleInput(client, client.currentScreen, window, key, action, scancode);
+           HudStates.getInstance().handleInput(client, client.currentScreen, window, key, action, scancode);
     }
 }

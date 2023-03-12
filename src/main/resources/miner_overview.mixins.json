@@ -4,6 +4,7 @@
   "package": "nl.thomasbrants.mineroverview.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
+    "ClientMixin",
     "CreativeInventoryMixin",
     "InGameHudMixin",
     "InventoryMixin",
