@@ -2,6 +2,7 @@ package nl.thomasbrants.mineroverview.mixin;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
+import nl.thomasbrants.mineroverview.light.LightHighlightRenderer;
 import nl.thomasbrants.mineroverview.light.LightLevelStorage;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -14,7 +15,6 @@ public class ClientMixin {
     private void joinWorld(ClientWorld world, CallbackInfo ci) {
         // Reset light levels
         LightLevelStorage.LIGHT_LEVELS.clear();
-
-        // TODO: get light sources around the player and recalculate the light levels
+        LightHighlightRenderer.getInstance().clearHighlightedBlocks();
     }
 }

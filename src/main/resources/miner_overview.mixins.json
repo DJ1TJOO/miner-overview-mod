@@ -9,7 +9,8 @@
     "InGameHudMixin",
     "InventoryMixin",
     "KeyboardMixin",
-    "LightMixin"
+    "LightMixin",
+    "PlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

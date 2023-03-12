@@ -17,7 +17,7 @@ import net.minecraft.text.Text;
 import net.minecraft.world.LightType;
 import nl.thomasbrants.mineroverview.config.ModConfig;
 import nl.thomasbrants.mineroverview.helpers.Colors;
-import nl.thomasbrants.mineroverview.light.LightHighlightRenderer;
+import nl.thomasbrants.mineroverview.light.LightLevelManger;
 import nl.thomasbrants.mineroverview.light.LightLevelStorage;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -41,6 +41,8 @@ public class OverviewHud {
     private final ConfigHolder<ModConfig> configHolder = AutoConfig.getConfigHolder(ModConfig.class);
     private final ModConfig config = configHolder.getConfig();
     private final MinecraftClient client;
+
+    private ItemStack luminanceItemStack;
 
     /**
      * Init overview hud for a given minecraft client.
@@ -293,20 +295,35 @@ public class OverviewHud {
         String lightLevelText = Text.translatable("text.miner_overview.lightLevel").getString() + ": %s".formatted(lightLevel);
 
         // Get next light source distance
-        if (config.lightLevel.toggleLightLevelSpawnProof && getLightItemStack() != null) {
-            Integer nextLightSourceDistance = getNextLightSourceDistance(lightLevel);
-            if (nextLightSourceDistance != null) {
-                // TODO: show highlight earlier
-                if (nextLightSourceDistance == 0) {
-                    LightHighlightRenderer.getInstance().addHighlightedBlock(client.player.getBlockPos().add(0, config.lightLevel.lightLevelHeight, 0));
-                } else {
-                    LightHighlightRenderer.getInstance().removeHighlightedBlock(client.player.getBlockPos().add(0, config.lightLevel.lightLevelHeight, 0));
-                }
-                lightLevelText += nextLightSourceDistance == 0 ? " (   )" : " (%s   )".formatted(nextLightSourceDistance);
-            }
-        }
+        String lightLevelDistanceText = getLightLevelDistanceText(lightLevel);
+        if (lightLevelDistanceText != null) lightLevelText += lightLevelDistanceText;
 
         return lightLevelText;
+    }
+
+    private String getLightLevelDistanceText(int lightLevel) {
+        if (client.player == null) return null;
+        if (!config.lightLevel.toggleLightLevelSpawnProof) return null;
+
+        ItemStack lightItemStack = getLightItemStack();
+        if (this.luminanceItemStack != lightItemStack) {
+            this.luminanceItemStack = lightItemStack;
+            LightLevelManger.getInstance().updateHighlights();
+        }
+
+        if (lightItemStack == null) return null;
+
+        int sourceLightLevel = getPlayerItemLuminance();
+        if (sourceLightLevel <= 0) return null;
+
+        int lightLevelWithNegatives = lightLevel;
+        if (lightLevelWithNegatives == 0 && LightLevelStorage.LIGHT_LEVELS.containsKey(client.player.getBlockPos().asLong())) {
+            lightLevelWithNegatives = LightLevelStorage.LIGHT_LEVELS.get(client.player.getBlockPos().asLong()).value;
+        }
+
+        int nextLightSourceDistance = LightLevelManger.getInstance()
+            .getNextLightSourceDistance(sourceLightLevel, lightLevelWithNegatives);
+        return nextLightSourceDistance == 0 ? " (   )" : " (%s   )".formatted(nextLightSourceDistance);
     }
 
     /**
@@ -334,54 +351,11 @@ public class OverviewHud {
     }
 
     /**
-     * Calculates the distance to the next light source to be placed.
-     *
-     * @param lightLevel The current light level.
-     * @return The distance to the next light source.
-     */
-    private Integer getNextLightSourceDistance(int lightLevel) {
-        // Calculate the distance to next light source placement
-        if (client.world == null || client.player == null) return null;
-
-        int actualLightLevel = lightLevel;
-
-        if (actualLightLevel == 0 && LightLevelStorage.LIGHT_LEVELS.containsKey(client.player.getBlockPos().asLong())) {
-            actualLightLevel = LightLevelStorage.LIGHT_LEVELS.get(client.player.getBlockPos().asLong()).value;
-        }
-
-        int luminance = getPlayerItemLuminance();
-        if (luminance <= 0) {
-            return null;
-        }
-
-        // Emitter ground | actualLightLevel | minLightLevel
-        // 13 1 6
-        // 13 + 1 = 13 -> 14 / 2 = 7 -> round(7) = 7 -> 7 - 6 = 1 -> 1 * 2 = 2 -> 2 + 1 = 3
-        // 13 0 6
-        // 13 + 0 = 13 -> 13 / 2 = 6.5 -> round(6.5) = 7 -> 7 - 6 = 1 -> 1 * 2 = 2
-        // 13 -1 6
-        // 13 - 1 = 12 -> 12 / 2 = 6 -> round(6) = 6 -> 6 - 6 = 0 -> 0 * 2 = 0 -> 0 + 1 = 1
-        // 13 -2 6
-        // 13 - 2 = 11 -> 11 / 2 = 5.5 -> round(5.5) = 6 -> 6 - 6 = 0 -> 0 * 2 = 0
-        // 13 -3 6
-        // 13 - 3 = 10 -> 10 / 2 = 5 -> round(5) = 5 -> 5 - 6 = -1 -> -1 * 2 = -2 -> -2 + 1 = -1
-
-        int emitterGroundLightLevel = luminance - Math.abs(config.lightLevel.lightLevelHeight);
-
-        float minLightLevelWhenPlaced = (emitterGroundLightLevel + actualLightLevel) / 2f;
-        boolean isRounded = minLightLevelWhenPlaced % 1 == 0;
-
-        int currentDistance = Math.round(minLightLevelWhenPlaced) - config.lightLevel.minLightLevelSpawnProof;
-
-        return currentDistance * 2 + (isRounded ? 1 : 0);
-    }
-
-    /**
      * Get the luminance of the current item in the main or offhand.
      *
      * @return Light source luminance.
      */
-    private int getPlayerItemLuminance() {
+    public int getPlayerItemLuminance() {
         if (client.player == null) return 0;
 
         if (!client.player.getInventory().getMainHandStack().isEmpty()) {

@@ -27,22 +27,17 @@ public class LightHighlightRenderer {
         this.highlightedBlocks = new ArrayList<>();
     }
 
-    public void addHighlightedBlock(BlockPos pos) {
-        addHighlightedBlock(pos.asLong());
-    }
-
     public void addHighlightedBlock(long pos) {
         if (highlightedBlocks.contains(pos)) return;
         highlightedBlocks.add(pos);
     }
 
-
-    public void removeHighlightedBlock(BlockPos pos) {
-        removeHighlightedBlock(pos.asLong());
-    }
-
     public void removeHighlightedBlock(long pos) {
         highlightedBlocks.remove(pos);
+    }
+
+    public void clearHighlightedBlocks() {
+        highlightedBlocks.clear();
     }
 
     public void render(WorldRenderContext context) {
