@@ -33,11 +33,11 @@ public abstract class InventoryMixin extends DrawableHelper {
 
     @Inject(method = "drawSlot", at = @At(value = "FIELD", target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;itemRenderer:Lnet/minecraft/client/render/item/ItemRenderer;", ordinal = 0))
     private void drawSlot(MatrixStack matrices, Slot slot, CallbackInfo ci) {
-        if (!shouldDrawSlot()) return;
+        if (!shouldDrawSlot() || MinerOverviewMod.getOverviewHud() == null) return;
 
         RenderSystem.setShaderTexture(0, OVERLAY_SLOT_TEXTURE);
 
-        Slot lastSlot = GameMinerHud.getItemOverviewSlot(slot.getIndex());
+        Slot lastSlot = MinerOverviewMod.getOverviewHud().getItemOverviewSlot(slot.getIndex());
         if (slot == lastSlot && config.renderedSlots.contains(slot.getIndex())) {
             DrawableHelper.drawTexture(matrices, slot.x, slot.y, getZOffset(), 0, 0, 16, 16, 16, 16);
         }
@@ -61,6 +61,7 @@ public abstract class InventoryMixin extends DrawableHelper {
     @Inject(method = "onMouseClick*", at = @At("HEAD"), cancellable = true)
     public void onMouseClick(Slot slot, int slotId, int button, SlotActionType actionType,
                              CallbackInfo ci) {
-        GameMinerHud.handleSlotMouseClick(slot, slotId, ci);
+        if (MinerOverviewMod.getOverviewHud() == null) return;
+        MinerOverviewMod.getOverviewHud().handleSlotMouseClick(slot, ci);
     }
 }

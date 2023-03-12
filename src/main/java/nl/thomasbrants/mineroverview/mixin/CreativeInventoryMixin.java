@@ -33,6 +33,7 @@ public class CreativeInventoryMixin {
     @Inject(method = "onMouseClick", at = @At("HEAD"), cancellable = true)
     public void onMouseClick(Slot slot, int slotId, int button, SlotActionType actionType,
                              CallbackInfo ci) {
-        GameMinerHud.handleSlotMouseClick(slot, slotId, ci);
+        if (MinerOverviewMod.getOverviewHud() == null) return;
+        MinerOverviewMod.getOverviewHud().handleSlotMouseClick(slot, ci);
     }
 }

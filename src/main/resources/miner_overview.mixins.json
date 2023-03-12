@@ -3,14 +3,12 @@
   "minVersion": "0.8",
   "package": "nl.thomasbrants.mineroverview.mixin",
   "compatibilityLevel": "JAVA_17",
-  "mixins": [
-  ],
   "client": [
     "CreativeInventoryMixin",
     "InGameHudMixin",
     "InventoryMixin",
     "KeyboardMixin",
-    "WorldMixin"
+    "LightMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -4,7 +4,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -15,11 +14,13 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RotationAxis;
 import net.minecraft.world.LightType;
 import nl.thomasbrants.mineroverview.MinerOverviewMod;
 import nl.thomasbrants.mineroverview.config.ModConfig;
 import nl.thomasbrants.mineroverview.helpers.Colors;
+import nl.thomasbrants.mineroverview.light.LightHighlightRenderer;
+import nl.thomasbrants.mineroverview.light.LightLevelStorage;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
@@ -34,10 +35,7 @@ public class GameMinerHud {
     // TODO: fix code complexity
     private final MinecraftClient client;
     // TODO: reset on world switch
-    // TODO: fix light distance out side of light level range
     // TODO: render green on block sides where to place
-    private final Map<BlockPos, Integer> lightValueCache;
-    private final List<BlockPos> lightValueCacheRevalidation;
 
     /**
      * Init overview hud for a given minecraft client.
@@ -46,9 +44,6 @@ public class GameMinerHud {
      */
     public GameMinerHud(MinecraftClient client) {
         this.client = client;
-
-        this.lightValueCache = new HashMap<>();
-        this.lightValueCacheRevalidation = new ArrayList<>();
     }
 
     /**
@@ -97,7 +92,7 @@ public class GameMinerHud {
         int maxSpace = height - minY - lineHeight * 2;
         int itemsSpace = maxSpace / lineHeight;
 
-        int originalSize = items.size();
+        final int originalSize = items.size();
         items = items.stream().limit(itemsSpace).toList();
 
         int totalHeight = items.size() * lineHeight;
@@ -115,7 +110,7 @@ public class GameMinerHud {
             if (client.player.getInventory().armor.contains(itemStack)) y -= 2;
         }
 
-        if (originalSize <= items.size()) {
+        if (originalSize > items.size()) {
             renderGuiOverlay(client.textRenderer, minX, y + 8, "(%s %s)".formatted(originalSize - items.size(), Text.translatable("text.miner_overview.more").getString()), config.textColor);
         }
     }
@@ -289,15 +284,19 @@ public class GameMinerHud {
         if (!config.lightLevel.toggleLightLevel) return null;
 
         // Get light level
-        int maxLightLevel = client.world.getMaxLightLevel();
         int lightLevel = client.world.getLightLevel(LightType.BLOCK, client.player.getBlockPos());
         String lightLevelText = Text.translatable("text.miner_overview.lightLevel").getString() + ": %s".formatted(lightLevel);
 
         // Get next light source distance
         if (config.lightLevel.toggleLightLevelSpawnProof && getLightItemStack() != null) {
-            Integer nextLightSourceDistance = getNextLightSourceDistance(lightLevel, maxLightLevel);
-
+            Integer nextLightSourceDistance = getNextLightSourceDistance(lightLevel);
             if (nextLightSourceDistance != null) {
+                // TODO: show highlight earlier
+                if (nextLightSourceDistance == 0) {
+                    LightHighlightRenderer.getInstance().addHighlightedBlock(client.player.getBlockPos().add(0, config.lightLevel.lightLevelHeight, 0));
+                } else {
+                    LightHighlightRenderer.getInstance().removeHighlightedBlock(client.player.getBlockPos().add(0, config.lightLevel.lightLevelHeight, 0));
+                }
                 lightLevelText += nextLightSourceDistance == 0 ? " (   )" : " (%s   )".formatted(nextLightSourceDistance);
             }
         }
@@ -314,7 +313,7 @@ public class GameMinerHud {
      */
     private void renderLightLevelItem(String lightLevelText, int x, int y) {
         float scale = 0.7F;
-        int xOffset = client.textRenderer.getWidth(lightLevelText) - client.textRenderer.getWidth("   )");
+        int xOffset = client.textRenderer.getWidth(lightLevelText) - client.textRenderer.getWidth(lightLevelText.substring(lightLevelText.indexOf("   )")));
 
         MatrixStack matrixStack2 = RenderSystem.getModelViewStack();
         matrixStack2.push();
@@ -330,130 +329,46 @@ public class GameMinerHud {
     }
 
     /**
-     * Handle block update in world for light levels.
-     *
-     * @param pos The position of the updated block.
-     * @param oldBlock The old block state.
-     * @param newBlock The new block state.
-     */
-    public void handleBlockUpdate(BlockPos pos, BlockState oldBlock, BlockState newBlock) {
-        if (oldBlock.getLuminance() <= 0 && newBlock.getLuminance() <= 0) return;
-
-        if (client.world == null) return;
-
-        int maxLightLevel = client.world.getMaxLightLevel();
-
-        List<BlockPos> keys = lightValueCache.keySet().stream()
-            .filter(x -> x.isWithinDistance(pos, maxLightLevel * 3)).toList();
-
-        // Queue for update
-        for (BlockPos key : keys) {
-            if (lightValueCacheRevalidation.contains(key)) continue;
-            lightValueCacheRevalidation.add(key);
-        }
-    }
-
-    /**
      * Calculates the distance to the next light source to be placed.
      *
      * @param lightLevel The current light level.
-     * @param maxLightLevel The maximum light level.
      * @return The distance to the next light source.
      */
-    private Integer getNextLightSourceDistance(int lightLevel, int maxLightLevel) {
+    private Integer getNextLightSourceDistance(int lightLevel) {
         // Calculate the distance to next light source placement
         if (client.world == null || client.player == null) return null;
 
         int actualLightLevel = lightLevel;
 
-        if (actualLightLevel == 0) {
-            BlockPos playerPos = client.player.getBlockPos();
-
-            if (lightValueCache.containsKey(playerPos) && !lightValueCacheRevalidation.contains(playerPos)) {
-                Integer cachedLightLevel = lightValueCache.get(playerPos);
-                if (cachedLightLevel == null) return null;
-
-                actualLightLevel = cachedLightLevel;
-            } else {
-                lightValueCacheRevalidation.remove(playerPos);
-
-                // Find the closest light source
-                List<Double> lightLevels = calculateLightLevels(playerPos, maxLightLevel);
-
-                // Find lowest value.
-                if (!lightLevels.isEmpty()) {
-                    lightLevels.sort(Double::compareTo);
-                    actualLightLevel = lightLevels.get(lightLevels.size() - 1).intValue();
-                    lightValueCache.put(playerPos, actualLightLevel);
-                } else {
-                    lightValueCache.put(playerPos, null);
-                    return null;
-                }
-            }
+        if (actualLightLevel == 0 && LightLevelStorage.LIGHT_LEVELS.containsKey(client.player.getBlockPos().asLong())) {
+            actualLightLevel = LightLevelStorage.LIGHT_LEVELS.get(client.player.getBlockPos().asLong()).value;
         }
 
-        int configLightLevel = config.lightLevel.minLightLevelSpawnProof + config.lightLevel.lightLevelHeight;
-        int luminance = getLuminance();
-        int worldLightLevel = actualLightLevel - 2;
-
+        int luminance = getPlayerItemLuminance();
         if (luminance <= 0) {
             return null;
         }
 
-        return worldLightLevel + luminance - configLightLevel;
-    }
+        // Emitter ground | actualLightLevel | minLightLevel
+        // 13 1 6
+        // 13 + 1 = 13 -> 14 / 2 = 7 -> round(7) = 7 -> 7 - 6 = 1 -> 1 * 2 = 2 -> 2 + 1 = 3
+        // 13 0 6
+        // 13 + 0 = 13 -> 13 / 2 = 6.5 -> round(6.5) = 7 -> 7 - 6 = 1 -> 1 * 2 = 2
+        // 13 -1 6
+        // 13 - 1 = 12 -> 12 / 2 = 6 -> round(6) = 6 -> 6 - 6 = 0 -> 0 * 2 = 0 -> 0 + 1 = 1
+        // 13 -2 6
+        // 13 - 2 = 11 -> 11 / 2 = 5.5 -> round(5.5) = 6 -> 6 - 6 = 0 -> 0 * 2 = 0
+        // 13 -3 6
+        // 13 - 3 = 10 -> 10 / 2 = 5 -> round(5) = 5 -> 5 - 6 = -1 -> -1 * 2 = -2 -> -2 + 1 = -1
 
-    /**
-     * Calculates all the relative light levels for a player position.
-     *
-     * @param playerPos The player position.
-     * @param maxLightLevel The max light level of a light source.
-     * @return A list of the relative light levels.
-     */
-    private List<Double> calculateLightLevels(BlockPos playerPos, int maxLightLevel) {
-        List<Double> lightLevels = new ArrayList<>();
+        int emitterGroundLightLevel = luminance - Math.abs(config.lightLevel.lightLevelHeight);
 
-        // Find all light levels
-        for (int i = -maxLightLevel*3; i < maxLightLevel*3; i++) {
-            for (int j = -maxLightLevel*3; j < maxLightLevel*3; j++) {
-                for (int k = -maxLightLevel*3; k < maxLightLevel*3; k++) {
-                    int x = playerPos.getX() + i;
-                    int z = playerPos.getZ() + j;
-                    int y = playerPos.getY() + k;
+        float minLightLevelWhenPlaced = (emitterGroundLightLevel + actualLightLevel) / 2f;
+        boolean isRounded = minLightLevelWhenPlaced % 1 == 0;
 
-                    BlockPos pos = new BlockPos(x, y, z);
+        int currentDistance = Math.round(minLightLevelWhenPlaced) - config.lightLevel.minLightLevelSpawnProof;
 
-                    Double lightLevel = calculateLightLevel(playerPos, pos);
-                    if (lightLevel == null) continue;
-
-                    lightLevels.add(lightLevel);
-                }
-            }
-        }
-
-        return lightLevels;
-    }
-
-    /**
-     * Calculates the relative light level for a block at a players position.
-     *
-     * @param playerPos The players position.
-     * @param blockPos The block position.
-     * @return The relative light level.
-     */
-    private Double calculateLightLevel(BlockPos playerPos, BlockPos blockPos) {
-        if (client.world == null) return null;
-
-        BlockState block = client.world.getBlockState(blockPos);
-        int blockLuminance = block.getLuminance();
-        if (blockLuminance == 0 || getLightItemStack() == null || !block.getBlock().asItem().equals(getLightItemStack().getItem())) return null;
-
-        int yOffset = Math.abs(playerPos.getY() - blockPos.getY());
-
-        BlockPos posDistance = new BlockPos(blockPos.getX(), playerPos.getY(), blockPos.getZ());
-        double distance = Math.sqrt(posDistance.getSquaredDistance(playerPos));
-
-        return blockLuminance - distance - yOffset;
+        return currentDistance * 2 + (isRounded ? 1 : 0);
     }
 
     /**
@@ -461,7 +376,7 @@ public class GameMinerHud {
      *
      * @return Light source luminance.
      */
-    private int getLuminance() {
+    private int getPlayerItemLuminance() {
         if (client.player == null) return 0;
 
         if (!client.player.getInventory().getMainHandStack().isEmpty()) {
@@ -514,8 +429,8 @@ public class GameMinerHud {
         return null;
     }
 
-    public static void handleSlotMouseClick(Slot slot, int slotId, CallbackInfo ci) {
-        if (!validItemOverviewSlot(slot, slotId)) return;
+    public void handleSlotMouseClick(Slot slot, CallbackInfo ci) {
+        if (!validItemOverviewSlot(slot)) return;
 
         if (config.renderedSlots.contains(slot.getIndex())) {
             config.renderedSlots.remove(slot.getIndex());
@@ -527,7 +442,7 @@ public class GameMinerHud {
         ci.cancel();
     }
 
-    private static boolean validItemOverviewSlot(Slot slot, int slotId) {
+    private boolean validItemOverviewSlot(Slot slot) {
         if (!config.toggleHud || !config.itemOverview.toggleItemOverview || !config.itemOverview.toggleInventoryItemOverview) {
             return false;
         }
@@ -541,7 +456,7 @@ public class GameMinerHud {
         return slot == getItemOverviewSlot(slot.getIndex());
     }
 
-    public static Slot getItemOverviewSlot(int index) {
+    public Slot getItemOverviewSlot(int index) {
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
         if (player == null) return null;
 
