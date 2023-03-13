@@ -12,19 +12,18 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import net.minecraft.world.LightType;
+import net.minecraft.world.biome.Biome;
 import nl.thomasbrants.mineroverview.config.ModConfig;
 import nl.thomasbrants.mineroverview.helpers.Colors;
 import nl.thomasbrants.mineroverview.light.LightLevelManger;
 import nl.thomasbrants.mineroverview.light.LightLevelStorage;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -118,7 +117,7 @@ public class OverviewHud {
         }
 
         if (originalSize > items.size()) {
-            renderGuiOverlay(client.textRenderer, minX, y + 8, "(%s %s)".formatted(originalSize - items.size(), Text.translatable("text.miner_overview.more").getString()), config.textColor);
+            renderGuiOverlay(client.textRenderer, minX, y + 8, "(%s %s)".formatted(originalSize - items.size(), Text.translatable("text.hud.miner_overview.more").getString()), config.textColor);
         }
     }
 
@@ -213,6 +212,7 @@ public class OverviewHud {
 
         infoText.put("coordinates", getCoordinatesText());
         infoText.put("dimension", getDimensionConversionText());
+        infoText.put("biome", getBiomeText());
         infoText.put("fps", getFpsText());
         infoText.put("light-level", getLightLevelText());
 
@@ -231,7 +231,23 @@ public class OverviewHud {
         if (!config.toggleFps) return null;
 
         int fps = MinecraftClient.getInstance().getCurrentFps();
-        return "%s %s".formatted(fps, Text.translatable("text.miner_overview.fps").getString());
+        return "%s %s".formatted(fps, Text.translatable("text.hud.miner_overview.fps").getString());
+    }
+
+    /**
+     * Get the biome info text.
+     *
+     * @return The text, null if not visible.
+     */
+    private String getBiomeText() {
+        if (client.player == null || client.world == null || !config.toggleBiome) return null;
+
+        Optional<RegistryKey<Biome>> biome = client.world.getBiome(client.player.getBlockPos()).getKey();
+        if (biome.isEmpty()) return null;
+
+        String biomeText = Text.translatable("text.hud.miner_overview.biome").getString();
+        String biomeName = Text.translatable("biome." + biome.get().getValue().getNamespace() + "." + biome.get().getValue().getPath()).getString();
+        return "%s: %s".formatted(biomeText, capitalize(biomeName));
     }
 
     /**
@@ -246,12 +262,12 @@ public class OverviewHud {
 
         // Show nether coordinates in the overworld
         if (client.player.getWorld().getRegistryKey().getValue().toString().equals("minecraft:overworld")) {
-            return Text.translatable("text.miner_overview.nether").getString() + ": " + coordsFormat.formatted(client.player.getBlockX() / 8, client.player.getBlockY(), client.player.getBlockZ() / 8);
+            return Text.translatable("text.hud.miner_overview.nether").getString() + ": " + coordsFormat.formatted(client.player.getBlockX() / 8, client.player.getBlockY(), client.player.getBlockZ() / 8);
         }
 
         // Show overworld coordinates in the nether
         if (client.player.getWorld().getRegistryKey().getValue().toString().equals("minecraft:the_nether")) {
-            return Text.translatable("text.miner_overview.overworld").getString() + ": " + coordsFormat.formatted(client.player.getBlockX() * 8, client.player.getBlockY(), client.player.getBlockZ() * 8);
+            return Text.translatable("text.hud.miner_overview.overworld").getString() + ": " + coordsFormat.formatted(client.player.getBlockX() * 8, client.player.getBlockY(), client.player.getBlockZ() * 8);
         }
 
         // Show no coordinates in any other world
@@ -273,7 +289,7 @@ public class OverviewHud {
 
         if (config.coordinates.toggleDirection) {
             coordinatesText += " (%s)".formatted(
-                Text.translatable("text.miner_overview.direction." +
+                Text.translatable("text.hud.miner_overview.direction." +
                     client.player.getHorizontalFacing().asString()).getString());
         }
 
@@ -292,7 +308,7 @@ public class OverviewHud {
 
         // Get light level
         int lightLevel = client.world.getLightLevel(LightType.BLOCK, client.player.getBlockPos());
-        String lightLevelText = Text.translatable("text.miner_overview.lightLevel").getString() + ": %s".formatted(lightLevel);
+        String lightLevelText = Text.translatable("text.hud.miner_overview.lightLevel").getString() + ": %s".formatted(lightLevel);
 
         // Get next light source distance
         String lightLevelDistanceText = getLightLevelDistanceText(lightLevel);
@@ -442,5 +458,10 @@ public class OverviewHud {
         List<Slot> slots = player.currentScreenHandler.slots.stream()
             .filter(x -> x.getIndex() == index).toList();
         return slots.get(slots.size() - 1);
+    }
+
+    private static String capitalize(String str) {
+        if (str == null) return null;
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 }

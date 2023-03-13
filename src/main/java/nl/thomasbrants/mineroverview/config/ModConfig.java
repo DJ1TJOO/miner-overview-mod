@@ -23,6 +23,9 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     public boolean toggleFps = true;
 
+    @ConfigEntry.Gui.Tooltip
+    public boolean toggleBiome = true;
+
     @ConfigEntry.Gui.CollapsibleObject
     public Coordinates coordinates = new Coordinates();
 
