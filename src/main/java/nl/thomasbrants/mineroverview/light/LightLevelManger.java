@@ -82,6 +82,7 @@ public class LightLevelManger {
         }
 
         // Only update when using light level spawn proof
+        // TODO: This should be removed, as it doesn't detect new light sources, but is currently necessary to prevent crashes
         if (!config.lightLevel.toggleLightLevelSpawnProof || OverviewHud.getInstance().getPlayerItemLuminance() == 0) return;
 
         MinerOverviewMod.LOGGER.info("Updating light sources");
