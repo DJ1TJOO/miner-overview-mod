@@ -1,3 +1,7 @@
+/**
+ * Miner Overview © 2023 by Thomas (DJ1TJOO) is licensed under CC BY-NC 4.0. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc/4.0/
+ */
+
 package nl.thomasbrants.mineroverview.mixin;
 
 import net.minecraft.client.Keyboard;
@@ -9,7 +13,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
 
 @Mixin(Keyboard.class)
 public class KeyboardMixin {

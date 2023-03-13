@@ -3,15 +3,16 @@
   "key.miner_overview.hud_toggle": "Toggle Overview",
   "key.miner_overview.toggle_slot": "Toggle Slot For Item Overview",
 
-  "text.miner_overview.direction.north": "North",
-  "text.miner_overview.direction.east": "East",
-  "text.miner_overview.direction.south": "South",
-  "text.miner_overview.direction.west": "West",
-  "text.miner_overview.fps": "fps",
-  "text.miner_overview.nether": "Nether",
-  "text.miner_overview.overworld": "Overworld",
-  "text.miner_overview.lightLevel": "Light Level",
-  "text.miner_overview.more": "more",
+  "text.hud.miner_overview.direction.north": "North",
+  "text.hud.miner_overview.direction.east": "East",
+  "text.hud.miner_overview.direction.south": "South",
+  "text.hud.miner_overview.direction.west": "West",
+  "text.hud.miner_overview.fps": "fps",
+  "text.hud.miner_overview.nether": "Nether",
+  "text.hud.miner_overview.overworld": "Overworld",
+  "text.hud.miner_overview.lightLevel": "Light Level",
+  "text.hud.miner_overview.more": "more",
+  "text.hud.miner_overview.biome": "Biome",
 
   "text.autoconfig.miner_overview.title": "Miner Overview Settings",
   "text.autoconfig.miner_overview.option.toggleHud": "Overview Visible",
@@ -20,6 +21,12 @@
   "text.autoconfig.miner_overview.option.textColor": "Overview Text Color",
   "text.autoconfig.miner_overview.option.textColor.@Tooltip": "Text color of the overview ingame",
 
+  "text.autoconfig.miner_overview.option.toggleFps": "Show FPS",
+  "text.autoconfig.miner_overview.option.toggleFps.@Tooltip": "Shows the frames per second in the overview",
+
+  "text.autoconfig.miner_overview.option.toggleBiome": "Show Biome",
+  "text.autoconfig.miner_overview.option.toggleBiome.@Tooltip": "Shows biome in the overview",
+
   "text.autoconfig.miner_overview.option.coordinates": "Coordinates",
   "text.autoconfig.miner_overview.option.coordinates.toggleCoordinates": "Show Coordinates",
   "text.autoconfig.miner_overview.option.coordinates.toggleCoordinates.@Tooltip": "Shows coordinates in the overview",
@@ -27,9 +34,6 @@
   "text.autoconfig.miner_overview.option.coordinates.toggleDirection.@Tooltip": "Shows the direction in the overview. Requires show coordinates to be enabled",
   "text.autoconfig.miner_overview.option.coordinates.toggleDimensionConversion": "Show Dimension Conversion",
   "text.autoconfig.miner_overview.option.coordinates.toggleDimensionConversion.@Tooltip": "Shows the nether coordinates when in the overworld and the overworld coordinates when in the nether",
-
-  "text.autoconfig.miner_overview.option.toggleFps": "Show FPS",
-  "text.autoconfig.miner_overview.option.toggleFps.@Tooltip": "Shows the frames per second in the overview",
 
   "text.autoconfig.miner_overview.option.lightLevel": "Light Level",
   "text.autoconfig.miner_overview.option.lightLevel.toggleLightLevel": "Show Light Level",
