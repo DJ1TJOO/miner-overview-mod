@@ -9,5 +9,6 @@ import java.util.Map;
 
 public class LightLevelStorage {
     public static final Map<Long, LightLevelStorageEntry> LIGHT_LEVELS = new HashMap<>();
+    public static boolean PLAYER_MOVED = false;
 
 }

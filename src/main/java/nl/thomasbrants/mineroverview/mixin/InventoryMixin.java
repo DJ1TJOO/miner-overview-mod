@@ -29,7 +29,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Inventory selected mixin.
  */
 @Mixin(value = {HandledScreen.class})
-public abstract class InventoryMixin extends DrawableHelper {
+public class InventoryMixin extends DrawableHelper {
     private static final Identifier OVERLAY_SLOT_TEXTURE = new Identifier("miner_overview:textures/gui/overlay_slot.png");
 
     private final ConfigHolder<ModConfig> configHolder = AutoConfig.getConfigHolder(ModConfig.class);
@@ -60,7 +60,7 @@ public abstract class InventoryMixin extends DrawableHelper {
         return true;
     }
 
-    @Inject(method = "onMouseClick*", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
     public void onMouseClick(Slot slot, int slotId, int button, SlotActionType actionType,
                              CallbackInfo ci) {
         OverviewHud.getInstance().handleSlotMouseClick(slot, ci);

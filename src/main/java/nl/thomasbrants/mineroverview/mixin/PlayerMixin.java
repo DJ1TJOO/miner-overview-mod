@@ -34,6 +34,7 @@ public class PlayerMixin extends AbstractClientPlayerEntity {
 
         if (lastUpdatedPos == playerPos) return;
         lastUpdatedPos = playerPos;
+        LightLevelStorage.PLAYER_MOVED = true;
 
         World world = this.getWorld();
         int radius = world.getMaxLightLevel() * 2;

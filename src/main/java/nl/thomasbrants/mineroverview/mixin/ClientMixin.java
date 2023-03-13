@@ -20,5 +20,6 @@ public class ClientMixin {
         // Reset light levels
         LightLevelStorage.LIGHT_LEVELS.clear();
         LightHighlightRenderer.getInstance().clearHighlightedBlocks();
+        LightLevelStorage.PLAYER_MOVED = false;
     }
 }

@@ -20,9 +20,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 // TODO: make data struct more efficient.
+// TODO: make less calls or make more efficient
 
 public class LightLevelManger {
     private static final LightLevelManger INSTANCE = new LightLevelManger();
+
     public static LightLevelManger getInstance() {
         return INSTANCE;
     }
@@ -75,12 +77,15 @@ public class LightLevelManger {
     }
 
     public void updateBlockLight(BlockView world, long pos, int value) {
-        MinerOverviewMod.LOGGER.info("Updating light sources");
-        long start = System.currentTimeMillis();
-
         if (value < 0 || value > world.getMaxLightLevel()) {
             throw new IllegalArgumentException();
         }
+
+        // Only update when using light level spawn proof
+        if (!config.lightLevel.toggleLightLevelSpawnProof || OverviewHud.getInstance().getPlayerItemLuminance() == 0) return;
+
+        MinerOverviewMod.LOGGER.info("Updating light sources");
+        long start = System.currentTimeMillis();
 
         if (value == LightLevelStorage.LIGHT_LEVELS.getOrDefault(pos, new LightLevelStorageEntry(-1, 0)).value) {
             return;
