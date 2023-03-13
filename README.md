@@ -2,7 +2,7 @@
 A simple hud that shows coordinates, biome, fps, lightlevel and more. Shows durability and stack size of items in the inventory and armor. Highlights blocks where to place torches and other light sources.
 
 ## Features
-### Info Texts
+### Info Overview
 Shows information about the world on the top left side of the screen. The visibility of these can be changed in the mod menu settings or in the config file.
 <br/><br/>
 ![](https://i.imgur.com/UuQxQGx.png)
