@@ -17,6 +17,7 @@ import nl.thomasbrants.mineroverview.hud.OverviewHud;
 
 import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 // TODO: make data struct more efficient.
@@ -93,31 +94,7 @@ public class LightLevelManger {
         }
 
         // Reset all with sources in range
-        Map<Long, LightLevelStorageEntry> sources = new LinkedHashMap<>();
-        for (Map.Entry<Long, LightLevelStorageEntry> lightLevel : LightLevelStorage.LIGHT_LEVELS.entrySet()
-            .stream().sorted((a, b) -> b.getValue().value - a.getValue().value).toList()) {
-            long lightLevelPos = lightLevel.getKey();
-            long sourcePos = lightLevel.getValue().sourcePos;
-
-            if (lightLevelPos == sourcePos && BlockPos.fromLong(lightLevelPos).isWithinDistance(BlockPos.fromLong(pos), world.getMaxLightLevel()*2)) {
-                sources.put(lightLevelPos, lightLevel.getValue());
-                if (lightLevelPos != pos) {
-                    // Requeue all sources except for changed
-                    queue.add(new QueueEntry(lightLevelPos, lightLevel.getValue()));
-                }
-
-                continue;
-            }
-
-            if (sources.containsKey(sourcePos) && lightLevelPos != sourcePos) {
-                LightLevelStorage.LIGHT_LEVELS.remove(lightLevelPos);
-                LightHighlightRenderer.getInstance().removeHighlightedBlock(lightLevelPos);
-            }
-        }
-
-        // Remove changed light level
-        LightLevelStorage.LIGHT_LEVELS.remove(pos);
-        LightHighlightRenderer.getInstance().removeHighlightedBlock(pos);
+        resetForSources(world, pos);
 
         // Requeue changed if it gives light
         if (value > 0) {
@@ -130,6 +107,32 @@ public class LightLevelManger {
         MinerOverviewMod.LOGGER.info("Updated light sources. It took: " + time + "ms");
 
         propagateIncrease(world);
+    }
+
+    private void resetForSources(BlockView world, long pos) {
+        List<Map.Entry<Long, LightLevelStorageEntry>> lightLevelsSorted = LightLevelStorage.LIGHT_LEVELS.entrySet()
+            .stream().sorted((a, b) -> b.getValue().value - a.getValue().value).toList();
+        Map<Long, LightLevelStorageEntry> sources = new LinkedHashMap<>();
+        for (Map.Entry<Long, LightLevelStorageEntry> lightLevel : lightLevelsSorted) {
+            long lightLevelPos = lightLevel.getKey();
+            long sourcePos = lightLevel.getValue().sourcePos;
+
+            if (lightLevelPos == sourcePos && BlockPos.fromLong(lightLevelPos).isWithinDistance(BlockPos.fromLong(
+                pos), world.getMaxLightLevel()*2)) {
+                sources.put(lightLevelPos, lightLevel.getValue());
+                if (lightLevelPos != pos) {
+                    // Requeue all sources except for changed
+                    queue.add(new QueueEntry(lightLevelPos, lightLevel.getValue()));
+                }
+            } else if (sources.containsKey(sourcePos) && lightLevelPos != sourcePos) {
+                LightLevelStorage.LIGHT_LEVELS.remove(lightLevelPos);
+                LightHighlightRenderer.getInstance().removeHighlightedBlock(lightLevelPos);
+            }
+        }
+
+        // Remove changed light level
+        LightLevelStorage.LIGHT_LEVELS.remove(pos);
+        LightHighlightRenderer.getInstance().removeHighlightedBlock(pos);
     }
 
     private void propagateIncrease(BlockView world) {

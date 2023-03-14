@@ -41,18 +41,22 @@ public class PlayerMixin extends AbstractClientPlayerEntity {
         for (int x = playerPos.getX() - radius; x < playerPos.getX() + radius; x++) {
             for (int y = playerPos.getY() - radius; y < playerPos.getY() + radius; y++) {
                 for (int z = playerPos.getZ() - radius; z < playerPos.getZ() + radius; z++) {
-                    int storedLightLevel = 0;
-                    if (LightLevelStorage.LIGHT_LEVELS.containsKey(BlockPos.asLong(x,y,z))) {
-                        storedLightLevel = LightLevelStorage.LIGHT_LEVELS.get(BlockPos.asLong(x,y,z)).value;
-                    }
-
-                    BlockPos pos = new BlockPos(x, y, z);
-                    int luminance = world.getLuminance(pos);
-                    if (luminance <= 0 || luminance <= storedLightLevel) continue;
-
-                    LightLevelManger.getInstance().updateBlockLight(world, pos.asLong(), luminance);
+                    checkBlockUpdate(world, x, y, z);
                 }
             }
         }
+    }
+
+    private void checkBlockUpdate(World world, int x, int y, int z) {
+        int storedLightLevel = 0;
+        if (LightLevelStorage.LIGHT_LEVELS.containsKey(BlockPos.asLong(x, y, z))) {
+            storedLightLevel = LightLevelStorage.LIGHT_LEVELS.get(BlockPos.asLong(x, y, z)).value;
+        }
+
+        BlockPos pos = new BlockPos(x, y, z);
+        int luminance = world.getLuminance(pos);
+        if (luminance <= 0 || luminance <= storedLightLevel) return;
+
+        LightLevelManger.getInstance().updateBlockLight(world, pos.asLong(), luminance);
     }
 }
