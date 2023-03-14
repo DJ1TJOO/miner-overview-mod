@@ -20,9 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// TODO: make data struct more efficient.
-// TODO: make less calls or make more efficient
-
 public class LightLevelManger {
     private static final LightLevelManger INSTANCE = new LightLevelManger();
 

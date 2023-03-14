@@ -26,3 +26,7 @@ The light levels is shown in the info texts. You can also enable Light Level Dis
 | Toggle Slot For Item Overview   | `LEFT ALT` | The key to hold when adding/removing a slot for the item overview.                                                            |
 
 You can change every key binding in the Minecraft key binding settings.
+
+## TODO
+- [ ] Make light algorithm more efficient
+- [ ] Make light data structure more efficient
